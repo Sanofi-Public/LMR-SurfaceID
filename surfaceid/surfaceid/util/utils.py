@@ -1,13 +1,9 @@
-# ** need to change var names
-# ** id for each match for easier search
-# ** pdb file
 import seaborn as sns
 from time import time
 import os
 import subprocess
 import numpy as np
 import pandas as pd
-import sys
 from functools import partial
 import tempfile
 from multiprocessing import Pool, cpu_count
@@ -18,11 +14,15 @@ import torch.nn as nn
 import torch_scatter
 import torch.optim as optim
 import sys
-from surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
 from plyfile import PlyData, PlyElement
 from copy import deepcopy
 from scipy.special import softmax as scipy_softmax
 from sklearn.decomposition import PCA
+
+from surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
+from surfaceid.util.mol import Mol_with_epitopes
+
+# Globals
 torch.set_num_threads(cpu_count())
 RLIM = 1.5
 SIG = 0.25
@@ -178,7 +178,7 @@ class Aligner1(nn.Module):
         self.mask = mask.reshape(1, n0, n).to(device)
         self.npairs = npairs
 
-        return
+        return None
 
     def forward(self):
         # transform
@@ -542,65 +542,6 @@ def mean_normal(n):
     """
     n = np.mean(n, axis=0)
     return n / np.sqrt(np.sum(n**2))
-
-
-class Mol_slim:
-    """_summary_
-    """
-
-    def __init__(self, device, p, contacts=True, outdir=OUTDIR):
-        p1, p2 = p.split(".")
-        self.p = f"{p1}.{p2}"
-        try:
-            fname = os.path.join(outdir, p1) + "_surface.npz"
-            x = np.load(fname)
-            self.list_indices = torch.tensor(
-                x["list_indices"], dtype=torch.long).to(device)
-            self.rho = torch.tensor(x["rho"]).to(device)
-            if contacts:
-                idxs = np.load(os.path.join(outdir, f"{p1}_contacts.{p2}.npy"))
-            else:
-                idxs = np.arange(len(x["x_initial"]))
-            idxs = np.unique(idxs)
-            self.idxs = idxs
-            edges = x["edge_index"]
-            edges = edges[:, np.all(np.isin(edges, idxs), axis=0)]
-            edges = np.unique(edges, axis=1)
-            edges = np.unique(np.concatenate(
-                [edges, edges[::-1, :]], axis=1), axis=1)
-            reorder_map = np.full(np.max(idxs)+1, -1, dtype=np.int32)
-            reorder_map[idxs] = range(len(idxs))
-            self.edges = torch.tensor(
-                reorder_map[edges], dtype=torch.long).to(device)
-            self.status = "good"
-        except:
-            self.status = "bad"
-
-
-class Mol_with_epitopes(Mol):
-    """_summary_
-
-    :param Mol: _description_
-    :type Mol: _type_
-    """
-
-    def __init__(self, p, contacts=True, outdir=OUTDIR):
-        p1, p2 = p
-        fname = os.path.join(outdir, p1) + "_surface.npz"
-        print(fname)
-        super().__init__(fname)
-        self.p = f"{p1}.{p2}"
-        if contacts:
-            self.idxs0 = np.load(os.path.join(
-                outdir, f"{p1}_contacts.{p2}.npy"))
-        else:
-            self.idxs0 = np.arange(len(self.x))
-
-        # Make patches
-        self.x = self.x[self.list_indices[self.idxs0]]
-        self.rho = self.rho[self.idxs0]
-        self.theta = self.theta[self.idxs0]
-        self.mask = self.mask[self.idxs0]
 
 
 def get_desc_aux(pdbs):
