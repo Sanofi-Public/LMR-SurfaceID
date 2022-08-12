@@ -1,12 +1,11 @@
-from surfaceid.util.utils import (SEARCH, ALIGN, DESC, RLIM, SIG, SIG_NORMAL, Aligner1, get_fs, Mol_slim,
-                                  find_clusters, get_whole_molecule_desc, get_fs_npz, get_xyz, get_centroid,
+from surfaceid.util.utils import (SEARCH, ALIGN, DESC, RLIM, SIG,  Aligner1, get_fs,
+                                  get_whole_molecule_desc, get_fs_npz, get_xyz, get_centroid,
                                   get_score1, get_score2, get_normal_npz, get_xyz_npz, transform_library, transform,
-                                  get_batch, Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
-                                  search, get_within, smooth_normals, get_reordered_subset, compute_aux_vars_CDR, get_cdr_residues, compute_aux_vars_CDR)
+                                   Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
+                                  search, get_within)
 
 import logging
 import os
-import subprocess
 import argparse
 import numpy as np
 import pandas as pd
@@ -45,7 +44,35 @@ ZIP = True
 REMOVE_OLD = ALIGN and SAVEPLY and SEARCH
 CATALOG_PAIRS = "data/20201107_SAbDab_catalog_pairs.tsv"
 
+expand_radius = 2.0
+neighbor_dist = 3.0
+nmin_pts = 40  # for grouping target decoys
+nmin_pts_library = 30  # library epitope
+# Model 
+prefix = "final_002"
+device = 'cpu'
 
+# ---- Identify antigens
+case = "4fqi_AB"
+OUTDIR_RESULTS = f"{case}_results"
+OUTDIR = "data/20201107_SAbDab_masif"
+target = "4fqi_AB"
+
+contact_thres1 = 3.0  # for identifying iface points
+contact_thres2 = None  # for distance based interacting points
+contact_mode = "dist"
+
+npatience = 100
+
+# --- 6AA
+params = {"rho_max": 6.0, "nbins_rho": 5, "nbins_theta": 16, "num_in": 5,
+            "neg_margin": 10, "add_center_pixel": True,
+            "share_soft_grid_across_channel": True,
+            "conv_type": "sep", "num_filters": 512, "weight_decay": 1e-2,
+            "dropout": 0.1, "min_sig": 5e-2, "lr": 5e-4}
+thres = 4.0
+
+savedir = "models"
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger("🧪 SurfaceID")
@@ -63,34 +90,23 @@ parser = argparse.ArgumentParser(
     ),
 )
 parser.add_argument(
-    "--input", default="config/parameter.yml", help="Input file for execution"
+    "--pdb", default="4fqi_AB", help="Input file for execution"
+)
+parser.add_argument(
+    "--device", default="cpu", help="Device to compute"
+)
+parser.add_argument(
+    "--params", default="config/params.yml", help="Number of cores"
 )
 parser.add_argument(
     "--device", default="3", help="Number of cores"
 )
 # parse the arguments
 (args) = parser.parse_args()
-device = 'cpu'
+
 if torch.cuda.is_available():
     device = torch.cuda.current_device()
 
-expand_radius = 2.0
-neighbor_dist = 3.0
-nmin_pts = 40  # for grouping target decoys
-nmin_pts_library = 30  # library epitope
-
-prefix = "final_002"
-elif prefix == "final_002":
-    # --- 6AA
-    params = {"rho_max": 6.0, "nbins_rho": 5, "nbins_theta": 16, "num_in": 5,
-                "neg_margin": 10, "add_center_pixel": True,
-                "share_soft_grid_across_channel": True,
-                "conv_type": "sep", "num_filters": 512, "weight_decay": 1e-2,
-                "dropout": 0.1, "min_sig": 5e-2, "lr": 5e-4}
-    thres = 4.0
-    # 3.5 -- 90 recall / 50 prec
-    # 3.0 -- 70 recall / 70 prec
-savedir = "models"
 if SEARCH or DESC or ALIGN:
     path = os.path.join(savedir, f"model_{prefix}.pth")
     model = Model(**params)
@@ -100,41 +116,35 @@ if SEARCH or DESC or ALIGN:
         path, map_location=torch.device('cpu')))
     model.eval()
 
-# ---- Identify antigens
-case = "4fqi_AB"
-OUTDIR = "data/20201107_SAbDab_masif"
-df = pd.read_csv("data/20201107_SAbDab_catalog_pairs.tsv", sep="\t")
-df["Ab"] = df.apply(lambda x: f'{x["id"]}_{x["Ab"]}', axis=1)
-df["Ag"] = df.apply(lambda x: f'{x["id"]}_{x["Ag"]}', axis=1)
+df = pd.read_csv(CATALOG_PAIRS, sep="\t")
+df.Ab = df.apply(lambda x: f'{x.id}_{x.Ab}', axis=1)
+df.Ag = df.apply(lambda x: f'{x.id}_{x.Ag}', axis=1)
 logger.info(f"# of pairs: {len(df)}")
-chains = set(df['Ab'].tolist() + df['Ag'].tolist())
+chains = set(df.Ab.tolist() + df.Ag.tolist())
 logger.info(f"# of chains: {len(chains)}")
 chains_processed = [chain for chain in chains if os.path.exists(
     f"{OUTDIR}/{chain}_surface.npz")]
 logger.info(
     f"# of chains processed: {len(chains_processed)}")
 df = df[df.apply(lambda x: (x["Ag"] in chains_processed) and (
-    x["Ab"] in chains_processed), axis=1)].reset_index(drop=True)
+    x.Ab in chains_processed), axis=1)].reset_index(drop=True)
 logger.info(f"# of pairs after filter: {len(df)}")
-contact_thres1 = 3.0  # for identifying iface points
-contact_thres2 = None  # for distance based interacting points
-contact_mode = "dist"
-OUTDIR_RESULTS = f"{case}_results"
+
 if os.path.exists(OUTDIR_RESULTS) and REMOVE_OLD:
     shutil.rmtree(OUTDIR_RESULTS)
 os.makedirs(OUTDIR_RESULTS, exist_ok=True)
 
 if CONTACT:
     for i, x in df.iterrows():
-        p1 = x["Ab"]
-        p2 = x["Ag"]
-        print(i, p1, p2)
+        p1 = x.Ab
+        p2 = x.Ag
+        logger.info(f"{i}, {p1}, {p2}")
         compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist,
                             contact_mode, contact_thres1, contact_thres2, device, smooth=False)
 
 if DESC:
-    p1s = df["Ab"].to_numpy()
-    p2s = df["Ag"].to_numpy()
+    p1s = df.Ab.to_numpy()
+    p2s = df.Ag.to_numpy()
     fname = f"nn_desc.{case}.npz"
     pdbs, x_desc, idxs_desc = gen_descriptors_contact(
         p1s, p2s, model, device, params["rho_max"], OUTDIR, fname)
@@ -146,8 +156,8 @@ if DESC:
 if not DESC and (ALIGN or SEARCH):
     fname = f"nn_desc.{case}.npz"
     data = np.load(fname)
-    pdbs = data["pdbs"]
-    x_desc = data["x"]
+    pdbs = data.pdbs
+    x_desc = data.x
     idxs_desc = data["idxs"]
     patch_sizes, pdbs_unique, starts, ends = get_desc_aux(pdbs)
 
@@ -221,7 +231,7 @@ if ALIGN:
         logger.info(f"/--{library}")
         for ie, entry in df_.iterrows():
             st = time()
-            library_p1, library_p2 = entry["library epitope"].split(".")
+            library_p1, library_p2 = entry.library.epitope.split(".")
             # assert False
             # Load library data
             fname = os.path.join(OUTDIR, f"{library_p1}_surface.npz")
@@ -233,7 +243,6 @@ if ALIGN:
             fs = fs[ii]
             fs_raw = get_fs_npz(fname, idxs_library)
             xyz = get_xyz_npz(fname, idxs_library)
-            # np.load(os.path.join(OUTDIR, f"{library_p1}_smoothed_normals.npy"))[idxs_library]
             n = get_normal_npz(fname, idxs_library)
             x, y, z = deepcopy(xyz).T
             xyz_mean = get_centroid(xyz)
@@ -241,14 +250,13 @@ if ALIGN:
 
             fname_target = os.path.join(OUTDIR, f"{target}_surface.npz")
             idxs_target = entry["target_expanded_indices"]
-            # if too big, gpu memory run out for alignment
+            
             if (len(idxs_target) < nmin_pts) or (len(idxs_target) > 5000):
                 continue
             fs0 = o_target[idxs_target]
             fs_raw0 = get_fs_npz(fname_target, idxs_target)
             xyz0 = get_xyz_npz(fname_target, idxs_target)
             x0, y0, z0 = xyz0.T
-            # np.load(os.path.join(OUTDIR, f"{target}_smoothed_normals.npy"))[idxs_target]
             n0 = get_normal_npz(fname_target, idxs_target)
             xyz0_mean = get_centroid(xyz0)
             xyz0 -= xyz0_mean
@@ -327,10 +335,9 @@ if ALIGN:
             df_hits.loc[ie, f"aln1_ncontact"] = ncontact
             id_counter += 1
             df_hits.loc[ie, "id"] = id_counter
-            # print(df_hits.loc[ie])
-            # assert False
-            print(f"Time for {library}: {time()-st:.2f}")
-            print()
+
+            logger.info(f"Time for {library}: {time()-st:.2f}")
+
             # and ((df_hits.loc[ie, f"aln1_score2"] < 0.9) or (df_hits.loc[ie, f"frac_library_hits"] > 0.3)):
             if SAVEPLY:
                 fname_library = os.path.join(OUTDIR, f"{library_p1}.ply")
