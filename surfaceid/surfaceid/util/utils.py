@@ -92,7 +92,27 @@ def gen_descriptors_contact(p1s, p2s, model, device, rho_max, outdir, fname):
 
 
 def transform_library(x, y, z, xyz0_mean, xyz_mean, align_model, idx, n=None):
-    # --- transform coord
+    """_summary_
+
+    :param x: _description_
+    :type x: _type_
+    :param y: _description_
+    :type y: _type_
+    :param z: _description_
+    :type z: _type_
+    :param xyz0_mean: _description_
+    :type xyz0_mean: _type_
+    :param xyz_mean: _description_
+    :type xyz_mean: _type_
+    :param align_model: _description_
+    :type align_model: _type_
+    :param idx: _description_
+    :type idx: _type_
+    :param n: _description_, defaults to None
+    :type n: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     a, b, g = align_model.alphas[idx].item(
     ), align_model.betas[idx].item(), align_model.gammas[idx].item()
     Tx = align_model.Tx[idx].item()
@@ -108,6 +128,23 @@ def transform_library(x, y, z, xyz0_mean, xyz_mean, align_model, idx, n=None):
 
 class Aligner1(nn.Module):
     def __init__(self, pos0, pos, mask, nangle=16, device="cpu", npairs=0, float_type=np.float32):
+        """_summary_
+
+        :param pos0: _description_
+        :type pos0: _type_
+        :param pos: _description_
+        :type pos: _type_
+        :param mask: _description_
+        :type mask: _type_
+        :param nangle: _description_, defaults to 16
+        :type nangle: int, optional
+        :param device: _description_, defaults to "cpu"
+        :type device: str, optional
+        :param npairs: _description_, defaults to 0
+        :type npairs: int, optional
+        :param float_type: _description_, defaults to np.float32
+        :type float_type: _type_, optional
+        """
         super(Aligner1, self).__init__()
         angle_range = 2 * np.pi
         dangle = angle_range / (nangle - 1)
@@ -166,12 +203,34 @@ class Aligner1(nn.Module):
 
 
 def get_r(xyz0, xyz):
+    """_summary_
+
+    :param xyz0: _description_
+    :type xyz0: _type_
+    :param xyz: _description_
+    :type xyz: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     r = np.sqrt(
         np.sum(np.square(xyz0[:, None, :] - xyz[None, :, :]), axis=-1) + 1e-6)
     return r
 
 
 def get_score1(xyz0, xyz, mask, npairs):
+    """_summary_
+
+    :param xyz0: _description_
+    :type xyz0: _type_
+    :param xyz: _description_
+    :type xyz: _type_
+    :param mask: _description_
+    :type mask: _type_
+    :param npairs: _description_
+    :type npairs: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     r = get_r(xyz0, xyz)
     loss = np.sum(r * mask) / npairs
 
@@ -179,6 +238,11 @@ def get_score1(xyz0, xyz, mask, npairs):
 
 
 class Aligner2(nn.Module):
+    """_summary_
+
+    :param nn: _description_
+    :type nn: _type_
+    """
     def __init__(self, pos0, f0, pos, f, sig=2.5, nangle=16, gamma=100, device="cpu", float_type=np.float32):
         super(Aligner2, self).__init__()
         angle_range = np.pi / 6.0
@@ -241,8 +305,6 @@ class Aligner2(nn.Module):
         nactive = (mask.sum(1) > 0).sum(1)  # npoints in query close to target
         # effectively select one target point per reference point
         w = torch.softmax(-r / self.sig, dim=1)
-        # print(w.sum(dim=1), w.shape, self.x.shape)
-        # assert False
         losses = (w * mask * self.f_matrix).sum((1, 2)) / nactive
         losses_ = losses + self.gamma * \
             (self.Tx.square() + self.Ty.square() + self.Tz.square())
@@ -252,6 +314,27 @@ class Aligner2(nn.Module):
 
 
 def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NORMAL):
+    """_summary_
+
+    :param xyz0: _description_
+    :type xyz0: _type_
+    :param fs_raw0: _description_
+    :type fs_raw0: _type_
+    :param n0: _description_
+    :type n0: _type_
+    :param xyz: _description_
+    :type xyz: _type_
+    :param fs_raw: _description_
+    :type fs_raw: _type_
+    :param n: _description_
+    :type n: _type_
+    :param sig: _description_
+    :type sig: _type_
+    :param sig_normal: _description_, defaults to SIG_NORMAL
+    :type sig_normal: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     r = get_r(xyz0, xyz)  # [N0, N]
     mask = (r < RLIM).astype(np.float32)
     r = 100. * (1. - mask) + r * mask
@@ -260,27 +343,32 @@ def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NOR
     f_matrix = np.sum(
         np.square(fs_raw0[:, None, :] - fs_raw[None, :, :]), axis=-1)
     score = (w * mask * f_matrix).sum() / nactive
-    # -- using mesh normals to compute
-    # mask = (r < 0.5).astype(np.float32)
-    # r = 100. * (1. - mask) + r * mask
-    # nactive = np.sum(mask.sum(axis=0) > 0)
-    # w = scipy_softmax(-r**2 / sig**2, axis=0)
     n_matrix = np.sum(n0[:, None, :] * n[None, :, :], axis=-1)
-    # sig_normal = 2.
-    # w_normal = np.exp(-r**2 / sig_normal**2)
-    # n_score = (w_normal * mask * n_matrix).sum() / w_normal.sum()
     n_score = (w * mask * n_matrix).sum() / \
         nactive  # normals are already smoothed
-    # print(nactive, score, n_score)
-    # iselect = mask.sum(axis=1) > 0
-    # n0_pca = get_pca_normal(xyz0[iselect])
-    # # n0_pca = np.sign(np.sum(n0_pca * n0[iselect])) * n0_pca
-    # ii, jj = np.where(mask==1)
-
     return nactive, score, n_score
 
 
 def get_score2(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig):
+    """_summary_
+
+    :param xyz0: _description_
+    :type xyz0: _type_
+    :param fs_raw0: _description_
+    :type fs_raw0: _type_
+    :param n0: _description_
+    :type n0: _type_
+    :param xyz: _description_
+    :type xyz: _type_
+    :param fs_raw: _description_
+    :type fs_raw: _type_
+    :param n: _description_
+    :type n: _type_
+    :param sig: _description_
+    :type sig: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     nactive1, score1, n0_score = get_score2_helper(
         xyz0, fs_raw0, n0, xyz, fs_raw, n, sig)
     nactive2, score2, n_score = get_score2_helper(
@@ -295,6 +383,13 @@ def get_score2(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig):
 
 
 def get_pca_normal(xyz):
+    """_summary_
+
+    :param xyz: _description_
+    :type xyz: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     pca = PCA(n_components=3)
     pca.fit(xyz)
     q1, q2, q3 = pca.components_
@@ -303,24 +398,64 @@ def get_pca_normal(xyz):
 
 
 def get_fs(query, pdbs_desc, x_desc, idxs_desc):
+    """_summary_
+
+    :param query: _description_
+    :type query: _type_
+    :param pdbs_desc: _description_
+    :type pdbs_desc: _type_
+    :param x_desc: _description_
+    :type x_desc: _type_
+    :param idxs_desc: _description_
+    :type idxs_desc: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     iselect = pdbs_desc == query
 
     return x_desc[iselect], idxs_desc[iselect]
 
 
 def get_xyz_npz(fname, idxs=None):
+    """_summary_
+
+    :param fname: _description_
+    :type fname: _type_
+    :param idxs: _description_, defaults to None
+    :type idxs: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     data = np.load(fname)
     vs = data["pos"]
     return vs[idxs]
 
 
 def get_normal_npz(fname, idxs=None):
+    """_summary_
+
+    :param fname: _description_
+    :type fname: _type_
+    :param idxs: _description_, defaults to None
+    :type idxs: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     data = np.load(fname)
     vs = data["normals"]
     return vs[idxs]
 
 
 def get_xyz(plydata, idxs=None):
+    """_summary_
+
+    :param plydata: _description_
+    :type plydata: _type_
+    :param idxs: _description_, defaults to None
+    :type idxs: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     vs = plydata["vertex"]
     x, y, z = vs["x"], vs["y"], vs["z"]
     if idxs is not None:
@@ -330,6 +465,15 @@ def get_xyz(plydata, idxs=None):
 
 
 def get_fs_npz(fname, idxs):
+    """_summary_
+
+    :param fname: _description_
+    :type fname: _type_
+    :param idxs: _description_
+    :type idxs: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     x = np.load(fname)["x_initial"][idxs]
     x = np.maximum(x, -1.0)
     x = np.minimum(x, 1.0)
@@ -359,6 +503,23 @@ def transform(x, y, z, a, b, g, Tx, Ty, Tz, xyz0_mean, xyz_mean):
 
 
 def inverse_rotation(x, y, z, a, b, g):
+    """_summary_
+
+    :param x: _description_
+    :type x: _type_
+    :param y: _description_
+    :type y: _type_
+    :param z: _description_
+    :type z: _type_
+    :param a: _description_
+    :type a: _type_
+    :param b: _description_
+    :type b: _type_
+    :param g: _description_
+    :type g: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     ca, cb, cg = np.cos(a), np.cos(b), np.cos(g)
     sa, sb, sg = np.sin(a), np.sin(b), np.sin(g)
     x1 = ca * cb * x + sa * cb * y - sb * z
@@ -372,6 +533,13 @@ def inverse_rotation(x, y, z, a, b, g):
 
 
 def mean_normal(n):
+    """_summary_
+
+    :param n: _description_
+    :type n: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     n = np.mean(n, axis=0)
     return n / np.sqrt(np.sum(n**2))
 
@@ -466,9 +634,68 @@ def get_desc_aux(pdbs):
     return patch_sizes, pdbs_unique, starts, ends
 
 
-def search(o1, rho, list_indices, within, library, library_within, pdbs_unique, patch_sizes,
-           pdbs, x_desc, idxs_desc, mini_bs, device, nmin_pts, expand_radius, nmin_pts_library,
-           thres, target, idxs_contact):
+def search(o1, 
+           rho, 
+           list_indices, 
+           within, 
+           library,
+           library_within, 
+           pdbs_unique, 
+           patch_sizes,
+           pdbs, 
+           x_desc, 
+           idxs_desc, 
+           mini_bs, 
+           device, 
+           nmin_pts, 
+           expand_radius, 
+           nmin_pts_library,
+           thres, 
+           target, 
+           idxs_contact):
+    """_summary_
+
+    :param o1: _description_
+    :type o1: _type_
+    :param rho: _description_
+    :type rho: _type_
+    :param list_indices: _description_
+    :type list_indices: _type_
+    :param within: _description_
+    :type within: _type_
+    :param library: _description_
+    :type library: _type_
+    :param library_within: _description_
+    :type library_within: _type_
+    :param pdbs_unique: _description_
+    :type pdbs_unique: _type_
+    :param patch_sizes: _description_
+    :type patch_sizes: _type_
+    :param pdbs: _description_
+    :type pdbs: _type_
+    :param x_desc: _description_
+    :type x_desc: _type_
+    :param idxs_desc: _description_
+    :type idxs_desc: _type_
+    :param mini_bs: _description_
+    :type mini_bs: _type_
+    :param device: _description_
+    :type device: _type_
+    :param nmin_pts: _description_
+    :type nmin_pts: _type_
+    :param expand_radius: _description_
+    :type expand_radius: _type_
+    :param nmin_pts_library: _description_
+    :type nmin_pts_library: _type_
+    :param thres: _description_
+    :type thres: _type_
+    :param target: _description_
+    :type target: _type_
+    :param idxs_contact: _description_
+    :type idxs_contact: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     summary = []
     with torch.set_grad_enabled(False):
         for lb, within_lb in zip(library, library_within):
@@ -589,7 +816,23 @@ def get_whole_molecule_desc(target, model, rho_max, bs=256, device="cpu", outdir
 
 
 def find_clusters(hits, within, rho, list_indices, nmin_pts=200, expand_radius=3.0):
-    """ """
+    """_summary_
+
+    :param hits: _description_
+    :type hits: _type_
+    :param within: _description_
+    :type within: _type_
+    :param rho: _description_
+    :type rho: _type_
+    :param list_indices: _description_
+    :type list_indices: _type_
+    :param nmin_pts: _description_, defaults to 200
+    :type nmin_pts: int, optional
+    :param expand_radius: _description_, defaults to 3.0
+    :type expand_radius: float, optional
+    :return: _description_
+    :rtype: _type_
+    """
     taken = np.zeros_like(hits, dtype=bool)
     ii = np.arange(len(taken), dtype=np.int32)
     groups = []
@@ -645,6 +888,17 @@ def find_clusters(hits, within, rho, list_indices, nmin_pts=200, expand_radius=3
 
 
 def get_within(rho, list_indices, neighbor_dist):
+    """_summary_
+
+    :param rho: _description_
+    :type rho: _type_
+    :param list_indices: _description_
+    :type list_indices: _type_
+    :param neighbor_dist: _description_
+    :type neighbor_dist: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     # Get inclusion matrix
     npts = len(rho)
     within = np.zeros((npts, npts), dtype=bool)
@@ -658,7 +912,18 @@ def get_within(rho, list_indices, neighbor_dist):
 
 
 def get_reordered_subset(idxs, rho, list_indices):
-    """returns re-ordered subset of points"""
+    """_summary_
+
+    :param idxs: _description_
+    :type idxs: _type_
+    :param rho: _description_
+    :type rho: _type_
+    :param list_indices: _description_
+    :type list_indices: _type_
+    :return: _description_
+    :rtype: _type_
+    """
+    #returns re-ordered subset of points
     # idxs is the subset vertices
     idxs_new = np.arange(len(idxs), dtype=np.int32)
     reorder_map = np.full(np.max(list_indices)+1, -1, dtype=np.int32)
@@ -669,6 +934,19 @@ def get_reordered_subset(idxs, rho, list_indices):
 
 
 def smooth_normals(n, rho, list_indices, sig_normal=SIG_NORMAL):
+    """_summary_
+
+    :param n: _description_
+    :type n: _type_
+    :param rho: _description_
+    :type rho: _type_
+    :param list_indices: _description_
+    :type list_indices: _type_
+    :param sig_normal: _description_, defaults to SIG_NORMAL
+    :type sig_normal: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     n_smoothed = np.zeros_like(n)
     rlim = SIG_NORMAL * 3
     for i, (li, r) in enumerate(zip(list_indices, rho)):
@@ -684,9 +962,9 @@ def smooth_normals(n, rho, list_indices, sig_normal=SIG_NORMAL):
 
 def compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist, mode,
                      contact_thres1, contact_thres2, device, smooth=True):
-    """p1, p2 are binding partners. Compute smoothed normals,
-    contact region indices, and a matrix that tells which points are connected
-    """
+    #""" p1, p2 are binding partners. Compute smoothed normals,
+    #contact region indices, and a matrix that tells which points are connected
+    #"""
     data1 = np.load(os.path.join(OUTDIR, f"{p1}_surface.npz"))
     x1 = data1["pos"]
     li1 = data1["list_indices"]
@@ -746,11 +1024,20 @@ def compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist, mode,
     np.save(os.path.join(OUTDIR, f"{p1}_within.{p2}.npy"), within1)
     np.save(os.path.join(OUTDIR, f"{p2}_within.{p1}.npy"), within2)
 
-    return
+    return None
 
 
 # ----- OX40 specific funs
 def get_cdr_residues(x, OUTDIR):
+    """_summary_
+
+    :param x: _description_
+    :type x: _type_
+    :param OUTDIR: _description_
+    :type OUTDIR: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     cdr_residues = {}
     for chain, cdrs in zip(["L", "H"], [('CDRL1', 'CDRL2', 'CDRL3'), ('CDRH1', 'CDRH2', 'CDRH3')]):
         tmp = []
@@ -789,9 +1076,22 @@ def get_cdr_residues(x, OUTDIR):
     return xs
 
 
-def compute_aux_vars_CDR(p1, OUTDIR, expand_radius, neighbor_dist,
-                         contact_thres1, contact_thres2, device, x2, smooth=True):
+def compute_aux_vars_CDR(p1, 
+                         OUTDIR, 
+                         expand_radius, 
+                         neighbor_dist,
+                         contact_thres1, 
+                         contact_thres2, 
+                         device, 
+                         x2, 
+                         smooth=True):
+    """_summary_
+
+    :return: _description_
+    :rtype: _type_
+    """
     data1 = np.load(os.path.join(OUTDIR, f"{p1}_surface.npz"))
+
     x1 = data1["pos"]
     li1 = data1["list_indices"]
     rho1 = data1["rho"]
@@ -811,7 +1111,6 @@ def compute_aux_vars_CDR(p1, OUTDIR, expand_radius, neighbor_dist,
     # ---- expand
     rho1_ = rho1[ii1]
     ii1 = np.unique(li1[ii1][(rho1_ > 0) & (rho1_ < expand_radius)])
-    # assert False
     np.save(os.path.join(OUTDIR, f"{p1}_contacts.{p1}.npy"), ii1)
     # ---- Compute connectivity matrix
     # assert False
@@ -819,6 +1118,6 @@ def compute_aux_vars_CDR(p1, OUTDIR, expand_radius, neighbor_dist,
     within1 = get_within(rho1, li1, neighbor_dist)
     np.save(os.path.join(OUTDIR, f"{p1}_within.{p1}.npy"), within1)
 
-    return
+    return None
 
 # ----- OX40 specific funs -- end

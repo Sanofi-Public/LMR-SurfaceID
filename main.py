@@ -1,8 +1,9 @@
 from surfaceid.util.utils import (SEARCH, ALIGN, DESC, RLIM, SIG,  Aligner1, get_fs,
                                   get_whole_molecule_desc, get_fs_npz, get_xyz, get_centroid,
-                                  get_score1, get_score2, get_normal_npz, get_xyz_npz, transform_library, transform,
+                                  get_score1, get_score2, get_normal_npz, get_xyz_npz, transform_library,
                                    Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
                                   search, get_within)
+
 
 import logging
 import os
@@ -22,8 +23,6 @@ import torch.optim as optim
 from plyfile import PlyData, PlyElement
 from copy import deepcopy
 import shutil
-import scipy.cluster.hierarchy as sch
-from scipy.spatial.distance import squareform
 
 torch.set_num_threads(cpu_count())
 CONTACT = False
