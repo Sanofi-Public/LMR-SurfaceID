@@ -1,7 +1,7 @@
 from surfaceid.util.utils import (SEARCH, ALIGN, DESC, RLIM, SIG,  Aligner1, get_fs,
                                   get_whole_molecule_desc, get_fs_npz, get_xyz, get_centroid,
                                   get_score1, get_score2, get_normal_npz, get_xyz_npz, transform_library,
-                                   Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
+                                  Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
                                   search, get_within)
 
 
@@ -14,9 +14,9 @@ import sys
 from multiprocessing import cpu_count
 import matplotlib.pyplot as plt
 from time import time
+import yaml
 
 from Bio.PDB import PDBParser, PDBIO
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -31,15 +31,9 @@ SEARCH = False
 ALIGN = False
 SAVEPLY = False
 HEATMAP = False
-ZIP = False
-#
-CONTACT = True
-DESC = True
-SEARCH = True
-ALIGN = True
-SAVEPLY = True
-ZIP = True
-#
+######################################
+# Parameter
+######################################
 REMOVE_OLD = ALIGN and SAVEPLY and SEARCH
 CATALOG_PAIRS = "data/20201107_SAbDab_catalog_pairs.tsv"
 
@@ -47,7 +41,7 @@ expand_radius = 2.0
 neighbor_dist = 3.0
 nmin_pts = 40  # for grouping target decoys
 nmin_pts_library = 30  # library epitope
-# Model 
+# Model
 prefix = "final_002"
 device = 'cpu'
 
@@ -65,10 +59,10 @@ npatience = 100
 
 # --- 6AA
 params = {"rho_max": 6.0, "nbins_rho": 5, "nbins_theta": 16, "num_in": 5,
-            "neg_margin": 10, "add_center_pixel": True,
-            "share_soft_grid_across_channel": True,
-            "conv_type": "sep", "num_filters": 512, "weight_decay": 1e-2,
-            "dropout": 0.1, "min_sig": 5e-2, "lr": 5e-4}
+          "neg_margin": 10, "add_center_pixel": True,
+          "share_soft_grid_across_channel": True,
+          "conv_type": "sep", "num_filters": 512, "weight_decay": 1e-2,
+          "dropout": 0.1, "min_sig": 5e-2, "lr": 5e-4}
 thres = 4.0
 
 savedir = "models"
@@ -95,13 +89,13 @@ parser.add_argument(
     "--device", default="cpu", help="Device to compute"
 )
 parser.add_argument(
-    "--params", default="config/params.yml", help="Number of cores"
-)
-parser.add_argument(
-    "--device", default="3", help="Number of cores"
+    "--params", default="config/config_4fqi.yml", help="config file with model parameter"
 )
 # parse the arguments
 (args) = parser.parse_args()
+
+config = yaml.safe_load(open(args.params, "r"))
+logger.info(config)
 
 if torch.cuda.is_available():
     device = torch.cuda.current_device()
@@ -139,7 +133,7 @@ if CONTACT:
         p2 = x.Ag
         logger.info(f"{i}, {p1}, {p2}")
         compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist,
-                            contact_mode, contact_thres1, contact_thres2, device, smooth=False)
+                         contact_mode, contact_thres1, contact_thres2, device, smooth=False)
 
 if DESC:
     p1s = df.Ab.to_numpy()
@@ -181,15 +175,15 @@ if SEARCH:
     # Get inclusion matrix
     within = get_within(rho, list_indices, neighbor_dist)
     summary.extend(search(o1, rho, list_indices, within, library, library_within, pdbs_unique, patch_sizes,
-                            pdbs, x_desc, idxs_desc, mini_bs, device, nmin_pts, expand_radius, nmin_pts_library,
-                            thres, target, idxs_contact=None))
+                          pdbs, x_desc, idxs_desc, mini_bs, device, nmin_pts, expand_radius, nmin_pts_library,
+                          thres, target, idxs_contact=None))
     # remove o1
     o1 = o1.cpu()
     del o1
     (f"{target} / dt = {time() - st_target:.3f}")
 
     df_hits = pd.DataFrame(summary, columns=["target", "library epitope", "target_nhits", "target_nexpanded", "mean_desc_dist",
-                            "library_nhits", "library_nexpanded", "frac_library_hits", "target_expanded_indices", "library_epitope_indices"])
+                                             "library_nhits", "library_nexpanded", "frac_library_hits", "target_expanded_indices", "library_epitope_indices"])
     df_hits["frac_expanded"] = df_hits["target_nhits"] / \
         df_hits["target_nexpanded"]
     df_hits["frac_geo"] = np.sqrt(
@@ -249,7 +243,7 @@ if ALIGN:
 
             fname_target = os.path.join(OUTDIR, f"{target}_surface.npz")
             idxs_target = entry["target_expanded_indices"]
-            
+
             if (len(idxs_target) < nmin_pts) or (len(idxs_target) > 5000):
                 continue
             fs0 = o_target[idxs_target]
@@ -353,7 +347,7 @@ if ALIGN:
                     xyz_patch_, _ = transform_library(
                         xp, yp, zp, xyz0_mean, xyz_mean, aligner1, idx1, None)
                     vertex_patch = np.asarray([tuple(q) for q in xyz_patch_], dtype=[
-                                                ('px', 'f4'), ('py', 'f4'), ('pz', 'f4')])
+                        ('px', 'f4'), ('py', 'f4'), ('pz', 'f4')])
                     el = PlyElement.describe(vertex_patch, tag)
                     els.append(el)
                 # transform whole molecule
@@ -449,7 +443,7 @@ if ALIGN:
         "." + df_annots2["id"] + "_" + df_annots2["Ag"]
     df_annots = pd.concat([df_annots1, df_annots2]).reset_index(drop=True)
     df_hits = pd.merge(df_hits, df_annots, left_on="library_epitope",
-                        right_on="id", how="left", suffixes=("", "_"))
+                       right_on="id", how="left", suffixes=("", "_"))
     df_hits.to_csv(fname, sep="\t", index=False)
 
     df_ = df_hits[(~df_hits["spatial_sim"].isna())].reset_index(drop=True)

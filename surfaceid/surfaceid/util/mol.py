@@ -1,5 +1,7 @@
 import numpy as np
+import os
 from surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
+import torch
 
 class Mol_slim:
     """_summary_
