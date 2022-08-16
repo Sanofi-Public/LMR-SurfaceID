@@ -1,0 +1,35 @@
+---
+# Generall varaibles
+CONTACT : False
+DESC : False
+SEARCH : False
+ALIGN : False
+SAVEPLY : False
+HEATMAP : False
+
+# Model Name
+MODEL:
+  NAME: final_002
+
+# Model related variables
+MODEL_PARAMETER:
+  rho_max: 6.0
+  nbins_rho: 5
+  nbins_theta: 16
+  num_in: 5
+  neg_margin: 10
+  add_center_pixel: True
+  share_soft_grid_across_channel: True
+  conv_type: sep
+  num_filters": 512
+  weight_decay: 1e-2
+  dropout: 0.1
+  min_sig: 5e-2
+  lr: 5e-4
+  thres: 4.0
+
+# Path related variables 
+PATH:
+  CATALOG_PAIRS : data/20201107_SAbDab_catalog_pairs.tsv
+  OUTDIR : data/20201107_SAbDab_masif
+  SAVEDIR : models
