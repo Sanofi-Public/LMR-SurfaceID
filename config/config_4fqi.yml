@@ -26,10 +26,38 @@ MODEL_PARAMETER:
   dropout: 0.1
   min_sig: 5e-2
   lr: 5e-4
+
+SPATIAL_PARAMETER:
   thres: 4.0
+  expand_radius : 2.0
+  neighbor_dist : 3.0
+  nmin_pts : 40
+  nmin_pts_library: 30
+  contact_thres1: 3.0
+  contact_thres2: None
+  contact_mode: dist
+  npatience: 100
 
 # Path related variables 
 PATH:
   CATALOG_PAIRS : data/20201107_SAbDab_catalog_pairs.tsv
   OUTDIR : data/20201107_SAbDab_masif
   SAVEDIR : models
+  MODEL: final_002
+  TARGET: 4fqi_AB
+  CASE: 4fqi_AB
+
+HIT_COLUMNS:
+  - target
+  - library epitope
+  - target_nhits
+  - target_nexpanded
+  - mean_desc_dist
+  - library_nhits
+  - library_nexpanded
+  - frac_library_hits
+  - target_expanded_indices
+  - library_epitope_indices
+  - frac_library_hits
+  - target_expanded_indices
+  - library_epitope_indices
