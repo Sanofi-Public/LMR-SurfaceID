@@ -1,5 +1,7 @@
 # Surface Similarity Search via Geometric Deep Learning
 
+![alt text](https://github.com/Sanofi-GitHub//blob/feat/interface/data/toc.png?raw=true)
+
 ## Setup
 ### Installation 
 ```
@@ -31,6 +33,7 @@ git commit -m "wip: adding train data sample"
 ```bash
 git lfs pull
 GIT_TRACE=1 git lfs fetch # debug
+```
 
 ## Output of the code:
 
