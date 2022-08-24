@@ -1,6 +1,6 @@
 # Surface Similarity Search via Geometric Deep Learning
 
-![alt text](https://github.com/Sanofi-GitHub//blob/feat/interface/data/toc.png?raw=true)
+![alt text](https://github.com/Sanofi-GitHub/blob/main/data/toc.png?raw=true)
 
 ## Setup
 ### Installation 
