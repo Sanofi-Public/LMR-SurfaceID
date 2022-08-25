@@ -9,9 +9,8 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed information about latest features.
 
 ## Setup
 ### Installation 
+Installation via poetry
 ```bash
-cd surface_id
-pip install poetry 
 cd surfaceID
 make install
 ```
