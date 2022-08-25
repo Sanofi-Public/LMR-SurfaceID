@@ -47,13 +47,14 @@ For each molecule, the modified versions of the MaSIF scripts are run to generat
 #### 20201107_SAbDab data set
 A copy of the DB pdb files are obtained by Yu Qiu and stored as `data/20201107_SAbDab`. Some catalogs generated using `gen_SAbDab_catalog.py`.
 
+#### Upload a file
+
 Large Files are stored using git lfs
 
-#### Upload a file
 ```bash
 brew install git-lfs # or apt, yum, pacamn, aur etc.
-git lfs *
-git add *
+git lfs track file
+git add file
 git commit -m "wip: adding train data sample"
 ```
 
@@ -62,7 +63,6 @@ git commit -m "wip: adding train data sample"
 git lfs pull
 GIT_TRACE=1 git lfs fetch # debug
 ```
-
 
 ## Train
 Assume `data/20201107_SAbDab_masif` data are available. To train the model, simply run 
