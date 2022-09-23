@@ -35,24 +35,24 @@ ALIGN = True
 
 
 def gen_descriptors_contact(p1s, p2s, model, device, rho_max, outdir, fname):
-    """_summary_
+    """Obtain Surface ID descriptors for the surface patches at the contact reagions
+        as defined in the "{p1}_contacts.{p2}.npy". Otherwise it uses entire protein Surface 
 
-    :param p1s: _description_
-    :type p1s: _type_
-    :param p2s: _description_
-    :type p2s: _type_
-    :param model: _description_
-    :type model: _type_
-    :param device: _description_
-    :type device: _type_
-    :param rho_max: _description_
-    :type rho_max: _type_
-    :param outdir: _description_
-    :type outdir: _type_
-    :param fname: _description_
-    :type fname: _type_
-    :return: _description_
-    :rtype: _type_
+    :param p1s: ID for protein 1: Format: PDBID_chain
+    :type p1s: str
+    :param p2s: ID for protein 2: Format: PDBID_chain
+    :type p2s: str
+    :param model:  model class used to obtain descriptors for a given protein   
+    :type model: Model
+    :param device: CPU or GPU
+    :type device: Torch.device
+    :param rho_max: max value for the radial distance from the patch center 
+    :type rho_max: float
+    :param outdir: directory where Surface ID descriptors are saved 
+    :type outdir: str
+    :param fname: npz file containing descriptors for all proteins
+    :type fname: str
+    :return: pdb,Surface ID descriptors, and patch/vertex indices  
     """
     outs = []
     idxs = []
@@ -92,26 +92,25 @@ def gen_descriptors_contact(p1s, p2s, model, device, rho_max, outdir, fname):
 
 
 def transform_library(x, y, z, xyz0_mean, xyz_mean, align_model, idx, n=None):
-    """_summary_
+    """ helper function for patch alignment where the hit patch aligned to the query patch using the align_model
 
-    :param x: _description_
-    :type x: _type_
-    :param y: _description_
-    :type y: _type_
-    :param z: _description_
-    :type z: _type_
-    :param xyz0_mean: _description_
-    :type xyz0_mean: _type_
-    :param xyz_mean: _description_
-    :type xyz_mean: _type_
-    :param align_model: _description_
-    :type align_model: _type_
-    :param idx: _description_
-    :type idx: _type_
-    :param n: _description_, defaults to None
-    :type n: _type_, optional
-    :return: _description_
-    :rtype: _type_
+    :param x: X coordinates for the vertex points on the patch
+    :type x: np.array
+    :param y: Y coordinates for the vertex points on the patch
+    :type y: np.array
+    :param z: Z coordinates for the vertex points on the patch
+    :type z: np.array
+    :param xyz0_mean: center of the query patch
+    :type xyz0_mean: np.array
+    :param xyz_mean: center of the candidate patch
+    :type xyz_mean: np.array
+    :param align_model: the model containing transformation parameters to align candidate patch to the query
+    :type align_model: Class
+    :param idx: Sorted indeces of the loss model
+    :type idx: int
+    :param n: patch normal vector , defaults to None
+    :type n: np.array, optional
+    :return: aligned patch and its normal
     """
     a, b, g = align_model.alphas[idx].item(
     ), align_model.betas[idx].item(), align_model.gammas[idx].item()
@@ -127,26 +126,29 @@ def transform_library(x, y, z, xyz0_mean, xyz_mean, align_model, idx, n=None):
 
 
 def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NORMAL):
-    """_summary_
+    """helper function for computing the alignment score 2.
+       this score uses the real space/raw features for the vertexes that are in contact 
+       (RLIM=1.5\AA). It computes the feature distance for contact verteces and weighs
+       it using the softmax of a Gaussian wieghed V-V distance. It also computers the 
+        dot product of the normals for the contact vertices
 
-    :param xyz0: _description_
-    :type xyz0: _type_
-    :param fs_raw0: _description_
-    :type fs_raw0: _type_
-    :param n0: _description_
-    :type n0: _type_
-    :param xyz: _description_
-    :type xyz: _type_
-    :param fs_raw: _description_
-    :type fs_raw: _type_
-    :param n: _description_
-    :type n: _type_
-    :param sig: _description_
-    :type sig: _type_
-    :param sig_normal: _description_, defaults to SIG_NORMAL
-    :type sig_normal: _type_, optional
-    :return: _description_
-    :rtype: _type_
+    :param xyz0: coordinates of the query patch
+    :type xyz0: np.array
+    :param fs_raw0: raw features for the query from MaSIF preprocessing 
+    :type fs_raw0: np.array
+    :param n0: normal vectors for the query pacth
+    :type n0: np.array
+    :param xyz: coordinates of the candidate patch
+    :type xyz: np.array
+    :param fs_raw: raw features for the candidate from MaSIF preprocessing
+    :type fs_raw: np.array
+    :param n: normal vectors for the candidate pacth
+    :type n: np.array
+    :param sig: the spread for the Gaussian wieghts
+    :type sig: float
+    :param sig_normal: , defaults to SIG_NORMAL
+    :type sig_normal: float, optional
+    :return: alignment nontacts, score (feature), alignment score(normals)
     """
     r = get_r(xyz0, xyz)  # [N0, N]
     mask = (r < RLIM).astype(np.float32)
@@ -163,24 +165,23 @@ def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NOR
 
 
 def get_score2(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig):
-    """_summary_
+    """ averages the alignment score2 permutating candidate and hit patches
 
-    :param xyz0: _description_
-    :type xyz0: _type_
-    :param fs_raw0: _description_
-    :type fs_raw0: _type_
-    :param n0: _description_
-    :type n0: _type_
-    :param xyz: _description_
-    :type xyz: _type_
-    :param fs_raw: _description_
-    :type fs_raw: _type_
-    :param n: _description_
-    :type n: _type_
-    :param sig: _description_
-    :type sig: _type_
-    :return: _description_
-    :rtype: _type_
+    :param xyz0: coordinates of the query patch
+    :type xyz0: np.array
+    :param fs_raw0: MaSIF raw feature for the query
+    :type fs_raw0: np.array
+    :param n0: normal vectors on the query
+    :type n0: np.array
+    :param xyz: coordinates of the candidate patch
+    :type xyz: np.array
+    :param fs_raw: MaSIF raw feature for the query
+    :type fs_raw: np.array
+    :param n: normal vectors on the candidate
+    :type n: np.array
+    :param sig: gaussian spread parameter
+    :type sig: float
+    :return: ncontacts, mean scores using features and normals
     """
     nactive1, score1, n0_score = get_score2_helper(
         xyz0, fs_raw0, n0, xyz, fs_raw, n, sig)
@@ -196,12 +197,10 @@ def get_score2(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig):
 
 
 def get_pca_normal(xyz):
-    """_summary_
+    """ computes PCA
 
-    :param xyz: _description_
-    :type xyz: _type_
-    :return: _description_
-    :rtype: _type_
+    :param xyz: xyz
+    :type xyz: np.array
     """
     pca = PCA(n_components=3)
     pca.fit(xyz)
@@ -211,18 +210,16 @@ def get_pca_normal(xyz):
 
 
 def get_fs(query, pdbs_desc, x_desc, idxs_desc):
-    """_summary_
-
-    :param query: _description_
-    :type query: _type_
-    :param pdbs_desc: _description_
-    :type pdbs_desc: _type_
-    :param x_desc: _description_
-    :type x_desc: _type_
-    :param idxs_desc: _description_
-    :type idxs_desc: _type_
-    :return: _description_
-    :rtype: _type_
+    """returns the SurfaceID descriptors
+    :param query: the protein id 
+    :type query: str
+    :param pdbs_desc: protein ids
+    :type pdbs_desc: np.array
+    :param x_desc: surface id descriptors 
+    :type x_desc: np.array
+    :param idxs_desc: surface patch indices
+    :type idxs_desc: np.array
+    :return: surface id descriptors and patch indeces
     """
     iselect = pdbs_desc == query
 
@@ -230,14 +227,14 @@ def get_fs(query, pdbs_desc, x_desc, idxs_desc):
 
 
 def get_xyz_npz(fname, idxs=None):
-    """_summary_
+    """returns x coordinates of the 
+        vertex points on the protein surface 
 
-    :param fname: _description_
-    :type fname: _type_
-    :param idxs: _description_, defaults to None
-    :type idxs: _type_, optional
-    :return: _description_
-    :rtype: _type_
+    :param fname: npz file name
+    :type fname: str
+    :param idxs: vertex id, defaults to None
+    :type idxs: int, optional
+    :return: x coordinates
     """
     data = np.load(fname)
     vs = data["pos"]
@@ -245,14 +242,13 @@ def get_xyz_npz(fname, idxs=None):
 
 
 def get_normal_npz(fname, idxs=None):
-    """_summary_
+    """ normal vectors on protein surface
 
-    :param fname: _description_
-    :type fname: _type_
-    :param idxs: _description_, defaults to None
-    :type idxs: _type_, optional
-    :return: _description_
-    :rtype: _type_
+    :param fname: npz file name 
+    :type fname: str
+    :param idxs: vertex id, defaults to None
+    :type idxs: int , optional
+    :return: normal vectors
     """
     data = np.load(fname)
     vs = data["normals"]
@@ -260,13 +256,14 @@ def get_normal_npz(fname, idxs=None):
 
 
 def get_xyz(plydata, idxs=None):
-    """_summary_
+    """ returns the xyz coordinates 
+        on portein surface
 
-    :param plydata: _description_
-    :type plydata: _type_
-    :param idxs: _description_, defaults to None
-    :type idxs: _type_, optional
-    :return: _description_
+    :param plydata: plydata object
+    :type plydata: plydata 
+    :param idxs: vertex id , defaults to None
+    :type idxs: int, optional
+    :return: xyz coordinates
     :rtype: _type_
     """
     vs = plydata["vertex"]
@@ -278,14 +275,14 @@ def get_xyz(plydata, idxs=None):
 
 
 def get_fs_npz(fname, idxs):
-    """_summary_
+    """ returns surface features on 
+        protein surface
 
-    :param fname: _description_
-    :type fname: _type_
-    :param idxs: _description_
-    :type idxs: _type_
-    :return: _description_
-    :rtype: _type_
+    :param fname: npz file name
+    :type fname: str
+    :param idxs: vertex/patch ids
+    :type idxs: np.array
+    :return: MaSIF features
     """
     x = np.load(fname)["x_initial"][idxs]
     x = np.maximum(x, -1.0)
@@ -299,6 +296,31 @@ def get_centroid(xyz):
 
 
 def transform(x, y, z, a, b, g, Tx, Ty, Tz, xyz0_mean, xyz_mean):
+    """ apply 3D rotation/translation 
+    :param x: X coordinates
+    : type x: np.array
+    :param y: Y coordinates
+    : type y: np.array
+    :param z: Z coordinates
+    : type z: np.array
+    :param a: alpha rotation angle
+    : type a: float
+    :param b: beta rotation angle
+    : type b: float
+    :param c: gamma rotation angle
+    : type c: float
+    :param Tx: translation in X direction
+    : type Tx: float
+    :param Ty: translation in y direction
+    : type Ty: float
+    :param Tz: translation in Z direction
+    : type Tz: float
+    :param xyz0_mean: query patch center
+    : type xyz0_mean: float
+    :param xyz_mean: candidate patch center
+    : type xyz_mean: float
+    :return: transformed coordinates
+    """
     ca, cb, cg = np.cos(a), np.cos(b), np.cos(g)
     sa, sb, sg = np.sin(a), np.sin(b), np.sin(g)
     x -= xyz_mean[0]
@@ -316,22 +338,21 @@ def transform(x, y, z, a, b, g, Tx, Ty, Tz, xyz0_mean, xyz_mean):
 
 
 def inverse_rotation(x, y, z, a, b, g):
-    """_summary_
+    """ rotates the coordinates back
 
-    :param x: _description_
-    :type x: _type_
-    :param y: _description_
-    :type y: _type_
-    :param z: _description_
-    :type z: _type_
-    :param a: _description_
-    :type a: _type_
-    :param b: _description_
-    :type b: _type_
-    :param g: _description_
-    :type g: _type_
-    :return: _description_
-    :rtype: _type_
+    :param x: X coordinates
+    :type x: np.array
+    :param y: Y coordinates
+    :type y: np.array
+    :param z: Z coordinates
+    :type z: np.array
+    :param a: alpha rotation angle
+    :type a: float
+    :param b: beta rotation angle
+    :type b: float
+    :param g: gamma rotation angle
+    :type g: float
+    :return: transformed oordinates
     """
     ca, cb, cg = np.cos(a), np.cos(b), np.cos(g)
     sa, sb, sg = np.sin(a), np.sin(b), np.sin(g)
@@ -346,24 +367,27 @@ def inverse_rotation(x, y, z, a, b, g):
 
 
 def mean_normal(n):
-    """_summary_
+    """ averages over the 
+        patch normal vectors
 
-    :param n: _description_
-    :type n: _type_
-    :return: _description_
-    :rtype: _type_
+    :param n: patch normal vectors
+    :type n: np.array
+    :return: averaged normal vectors
     """
     n = np.mean(n, axis=0)
     return n / np.sqrt(np.sum(n**2))
 
 
 def get_desc_aux(pdbs):
-    """_summary_
-
-    :param pdbs: _description_
-    :type pdbs: _type_
-    :return: _description_
-    :rtype: _type_
+    """ returns the indices where a 
+        given protein id starts and ends
+        in Surface ID descriptor file 
+    :param pdbs: pdb field in the descriptor file
+    :type pdbs: np.array
+    :return: number of patches corresponding to each 
+            protein in the area of interest,
+            unique protein ids, and the start-end indices
+            for each protein in the descriptor file
     """
     n = len(np.unique(pdbs))
     starts = np.zeros(n, dtype=np.int32)
@@ -407,48 +431,53 @@ def search(o1,
            thres, 
            target, 
            idxs_contact):
-    """_summary_
+    """ performs the search for all pairs between the query and candidate
+        first, it computes the descriptor distance between all pair of verticies
+        between  query and candidate. it selects pairs within the descriptor 
+        distance thresheold. if number of hits between query and candidate exceeds
+        the threshold arameter, hit grouping is performed to unify vertex hits with
+        their nearest neighbors and form a hit area on each protein surface.
 
-    :param o1: _description_
-    :type o1: _type_
-    :param rho: _description_
-    :type rho: _type_
-    :param list_indices: _description_
-    :type list_indices: _type_
-    :param within: _description_
-    :type within: _type_
-    :param library: _description_
-    :type library: _type_
-    :param library_within: _description_
-    :type library_within: _type_
-    :param pdbs_unique: _description_
-    :type pdbs_unique: _type_
-    :param patch_sizes: _description_
-    :type patch_sizes: _type_
-    :param pdbs: _description_
-    :type pdbs: _type_
-    :param x_desc: _description_
-    :type x_desc: _type_
-    :param idxs_desc: _description_
-    :type idxs_desc: _type_
-    :param mini_bs: _description_
-    :type mini_bs: _type_
-    :param device: _description_
-    :type device: _type_
-    :param nmin_pts: _description_
-    :type nmin_pts: _type_
-    :param expand_radius: _description_
-    :type expand_radius: _type_
-    :param nmin_pts_library: _description_
-    :type nmin_pts_library: _type_
-    :param thres: _description_
-    :type thres: _type_
-    :param target: _description_
-    :type target: _type_
-    :param idxs_contact: _description_
-    :type idxs_contact: _type_
-    :return: _description_
-    :rtype: _type_
+    :param o1: Surface ID descriptors for the query protein
+    :type o1: torch.tensor
+    :param rho: radial distribution of vertices on a patch from the patch center
+    :type rho: np.array
+    :param list_indices: embedded list containing the vertex ids within each patch
+    :type list_indices: np.array
+    :param within: vertex ids that fall within the neighbor_dist for the query patch
+    :type within: np.array
+    :param library: protein ids in the library
+    :type library: np.array
+    :param library_within: embedded list of vertex ids corresponding to the vertices
+                           within the neighbor_dist of each patch in the candidate protein
+    :type library_within: np.array
+    :param pdbs_unique: unique pdb ids
+    :type pdbs_unique: np.array
+    :param patch_sizes: number of patches for every candidate protein within the area of interest
+    :type patch_sizes: np.array
+    :param pdbs: protein names corresponding to each patch in the library following the Surface ID descriptor
+    :type pdbs: np.array
+    :param x_desc: Surface ID descriptors
+    :type x_desc: torch.tensor
+    :param idxs_desc: patch ids for the corresponding descriptors
+    :type idxs_desc: torch.tensor
+    :param mini_bs: mini batches to perform the search
+    :type mini_bs: torch.tensor
+    :param device: CPU or GPU
+    :type device: str
+    :param nmin_pts: minimum number of hit patches on query for identifying it as a hit  
+    :type nmin_pts: int
+    :param expand_radius: the expansion radius around the hit vertices to define the hit area following the clustering step
+    :type expand_radius: float
+    :param nmin_pts_library: minimum number of hit patches on candidate protein for identifying it as a hit
+    :type nmin_pts_library: int
+    :param thres: threshld used for descriptor distance to identify two patches as similar
+    :type thres: float
+    :param target: protein id for the query 
+    :type target: str
+    :param idxs_contact: patch indices for located at the area of contact 
+    :type idxs_contact: np.array
+    :return: 
     """
     summary = []
     with torch.set_grad_enabled(False):
@@ -504,87 +533,23 @@ def search(o1,
 
     return summary
 
-
-def get_batch(device, ps, rho_max, contacts=True, outdir=None):
-    xs = [Mol_with_epitopes(p, contacts, outdir) for p in ps]
-    xs = [x for x in xs if x.status == "good"]
-    patches = [(x.x, x.rho, x.theta, x.mask, x.idxs0,
-                np.full(len(x.idxs0), x.p)) for x in xs]
-    x, rho, theta, mask, idxs0, pdbs = zip(*patches)
-    x_ = np.concatenate(x)
-    rho_ = np.concatenate(rho)
-    theta_ = np.concatenate(theta)
-    mask_ = np.concatenate(mask)
-    idxs0 = np.concatenate(idxs0)
-    pdbs = np.concatenate(pdbs)
-
-    # reduce data
-    mask_[rho_ > rho_max] = 0.
-    m = mask_.sum(axis=0)
-    npoints = 0
-    while m[npoints] > 0:
-        npoints += 1
-        if npoints == 200:
-            break
-    B = len(x)
-    x_ = x_[:, :npoints]
-    rho_ = rho_[:, :npoints]
-    theta_ = theta_[:, :npoints]
-    mask_ = mask_[:, :npoints]
-
-    x_, rho_, theta_, mask_ = clean_tensor(device, x_, rho_, theta_, mask_)
-
-    return x_, rho_, theta_, mask_, idxs0, pdbs
-
-
-def get_whole_molecule_desc(target, model, rho_max, bs=256, device="cpu", outdir=None):
-    """_summary_
-
-    :param target: _description_
-    :type target: _type_
-    :param model: _description_
-    :type model: _type_
-    :param rho_max: _description_
-    :type rho_max: _type_
-    :param bs: _description_, defaults to 256
-    :type bs: int, optional
-    :param device: _description_, defaults to "cpu"
-    :type device: str, optional
-    :param outdir: _description_, defaults to None
-    :type outdir: _type_, optional
-    :return: _description_
-    :rtype: _type_
-    """
-    x_, rho_, theta_, mask_, idxs0_, pdbs_ = get_batch(
-        device, [(target, "none")], rho_max, contacts=False, outdir=outdir)
-    outs = []
-    for i1 in range(0, len(x_), bs):
-        i2 = min(i1 + bs, len(x_))
-        o, _, _, _ = model(x_[i1:i2], rho_[i1:i2], theta_[
-                           i1:i2], mask_[i1:i2], calc_loss=False)
-        outs.append(o.detach().cpu().numpy())
-    o = np.concatenate(outs)
-    p = Mol_slim(device, f"{target}.none", contacts=False, outdir=outdir)
-
-    return o, p
-
-
 def find_clusters(hits, within, rho, list_indices, nmin_pts=200, expand_radius=3.0):
-    """_summary_
+    """ unites the hit verteces using nearest neighbors within the expansion radius.
+        the clusters that satisfy the cluster size threshold are returned as hit area.
 
-    :param hits: _description_
-    :type hits: _type_
-    :param within: _description_
-    :type within: _type_
-    :param rho: _description_
-    :type rho: _type_
-    :param list_indices: _description_
-    :type list_indices: _type_
-    :param nmin_pts: _description_, defaults to 200
+    :param hits: hit vertex points/patches that satisfy the descriptor distance cutoff 
+    :type hits: np.array
+    :param within: 
+    :type within: np.array
+    :param rho: radial distances of vertecies wrt patch center
+    :type rho: np.array
+    :param list_indices: embedded list of vertex ids for each patch
+    :type list_indices: list
+    :param nmin_pts: cutoff for cluster size, defaults to 200
     :type nmin_pts: int, optional
-    :param expand_radius: _description_, defaults to 3.0
+    :param expand_radius: distance to include the nearest neighbors, defaults to 3.0
     :type expand_radius: float, optional
-    :return: _description_
+    :return: expanded hit area (vertex points)
     :rtype: _type_
     """
     taken = np.zeros_like(hits, dtype=bool)
@@ -640,17 +605,81 @@ def find_clusters(hits, within, rho, list_indices, nmin_pts=200, expand_radius=3
 
     return groups_expanded
 
+def get_batch(device, ps, rho_max, contacts=True, outdir=None):
+    xs = [Mol_with_epitopes(p, contacts, outdir) for p in ps]
+    xs = [x for x in xs if x.status == "good"]
+    patches = [(x.x, x.rho, x.theta, x.mask, x.idxs0,
+                np.full(len(x.idxs0), x.p)) for x in xs]
+    x, rho, theta, mask, idxs0, pdbs = zip(*patches)
+    x_ = np.concatenate(x)
+    rho_ = np.concatenate(rho)
+    theta_ = np.concatenate(theta)
+    mask_ = np.concatenate(mask)
+    idxs0 = np.concatenate(idxs0)
+    pdbs = np.concatenate(pdbs)
+
+    # reduce data
+    mask_[rho_ > rho_max] = 0.
+    m = mask_.sum(axis=0)
+    npoints = 0
+    while m[npoints] > 0:
+        npoints += 1
+        if npoints == 200:
+            break
+    B = len(x)
+    x_ = x_[:, :npoints]
+    rho_ = rho_[:, :npoints]
+    theta_ = theta_[:, :npoints]
+    mask_ = mask_[:, :npoints]
+
+    x_, rho_, theta_, mask_ = clean_tensor(device, x_, rho_, theta_, mask_)
+
+    return x_, rho_, theta_, mask_, idxs0, pdbs
+
+
+def get_whole_molecule_desc(target, model, rho_max, bs=256, device="cpu", outdir=None):
+    """ returns the Surface ID descriptors for the whole entire protein
+    :param target: protein name
+    :type target: str
+    :param model: Surface ID model 
+    :type model: Model
+    :param rho_max: max radial cutoff for patch vertices  
+    :type rho_max: float
+    :param bs:batch size, defaults to 256
+    :type bs: int, optional
+    :param device: cpu or gpu, defaults to "cpu"
+    :type device: str, optional
+    :param outdir: directory where descriptors are saved, defaults to None
+    :type outdir: int, optional
+    :return: descriptors, protein name
+    :rtype: _type_
+    """
+    x_, rho_, theta_, mask_, idxs0_, pdbs_ = get_batch(
+        device, [(target, "none")], rho_max, contacts=False, outdir=outdir)
+    outs = []
+    for i1 in range(0, len(x_), bs):
+        i2 = min(i1 + bs, len(x_))
+        o, _, _, _ = model(x_[i1:i2], rho_[i1:i2], theta_[
+                           i1:i2], mask_[i1:i2], calc_loss=False)
+        outs.append(o.detach().cpu().numpy())
+    o = np.concatenate(outs)
+    p = Mol_slim(device, f"{target}.none", contacts=False, outdir=outdir)
+
+    return o, p
+
+
+
 
 def get_within(rho, list_indices, neighbor_dist):
-    """_summary_
+    """ returns the vertex points within neighbor_dist or patch center
 
-    :param rho: _description_
-    :type rho: _type_
-    :param list_indices: _description_
-    :type list_indices: _type_
-    :param neighbor_dist: _description_
-    :type neighbor_dist: _type_
-    :return: _description_
+    :param rho: radial distances of vertex points wrt patch center
+    :type rho: np.array
+    :param list_indices: embedded list of vertices within each patch
+    :type list_indices: list
+    :param neighbor_dist: distance cutoff
+    :type neighbor_dist: float
+    :return: vetex points within the cutoff distance from each patch
     :rtype: _type_
     """
     # Get inclusion matrix
@@ -666,19 +695,17 @@ def get_within(rho, list_indices, neighbor_dist):
 
 
 def get_reordered_subset(idxs, rho, list_indices):
-    """_summary_
+    """ returns re-ordered subset of points 
 
-    :param idxs: _description_
-    :type idxs: _type_
-    :param rho: _description_
-    :type rho: _type_
-    :param list_indices: _description_
-    :type list_indices: _type_
-    :return: _description_
+    :param idxs:  subset vertices
+    :type idxs: np.array
+    :param rho: radial distances of vertex points wrt patch center
+    :type rho: np.array
+    :param list_indices: embedded list of vertices within each patch
+    :type list_indices: list
+    :return: re-ordered subset of points
     :rtype: _type_
     """
-    #returns re-ordered subset of points
-    # idxs is the subset vertices
     idxs_new = np.arange(len(idxs), dtype=np.int32)
     reorder_map = np.full(np.max(list_indices)+1, -1, dtype=np.int32)
     reorder_map[idxs] = idxs_new
@@ -688,17 +715,18 @@ def get_reordered_subset(idxs, rho, list_indices):
 
 
 def smooth_normals(n, rho, list_indices, sig_normal=SIG_NORMAL):
-    """_summary_
+    """ returns the mean of normal vetors for each patch using the 
+        vertex points within a cutoff distance of 3*SIG_NORMA. 
 
-    :param n: _description_
-    :type n: _type_
-    :param rho: _description_
-    :type rho: _type_
-    :param list_indices: _description_
-    :type list_indices: _type_
-    :param sig_normal: _description_, defaults to SIG_NORMAL
-    :type sig_normal: _type_, optional
-    :return: _description_
+    :param n: normal vectors for each vertex point
+    :type n: np.array
+    :param rho: radial distances of vertex points wrt patch center
+    :type rho: np.array
+    :param list_indices: embedded list of vertices within each patch
+    :type list_indices: list
+    :param sig_normal: spread , defaults to SIG_NORMAL
+    :type sig_normal: int, optional
+    :return: mean normal
     :rtype: _type_
     """
     n_smoothed = np.zeros_like(n)
@@ -783,13 +811,13 @@ def compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist, mode,
 
 # ----- OX40 specific funs
 def get_cdr_residues(x, OUTDIR):
-    """_summary_
+    """extract the coordinates of CDR residues from the x DataFrame 
 
-    :param x: _description_
-    :type x: _type_
-    :param OUTDIR: _description_
-    :type OUTDIR: _type_
-    :return: _description_
+    :param x: pd.DataFrame containing the CDRs
+    :type x: pd.DataFrame
+    :param OUTDIR: directory containing the PDB files
+    :type OUTDIR: str
+    :return:  XYZ coordinates of the CDR residues
     :rtype: _type_
     """
     cdr_residues = {}
@@ -839,9 +867,23 @@ def compute_aux_vars_CDR(p1,
                          device, 
                          x2, 
                          smooth=True):
-    """_summary_
-
-    :return: _description_
+    """ idntifies and writes the surface patches at the interace, the mean normal vectors,
+        and vertex points that are within a utoff distance from each patch at the interface
+    :paramp1: protein name
+    :type p2: str
+    :OUTDIR: the directory where the MaSIF surface files are saved
+    :type OUTDIR: str
+    :param expand_radius: cutoff distace to obtain the nearest eighbors
+    :type expand_radius: float
+    :param neighbor_dist: list of vertex points within a patch
+    :type neighbor_dist: list
+    :param contact_thres1: cutoff distance for protein 1 to identify the patches at the area of interest 
+    :type contact_thres1: float
+    :param contact_thres2: cutoff distance for protein 2 to identify the patches at the area of interest
+    :type contact_thres2: float
+    :param x2: coordinates of verecies for protein 2
+    :type x2: np.array
+    :return: 
     :rtype: _type_
     """
     data1 = np.load(os.path.join(OUTDIR, f"{p1}_surface.npz"))
@@ -873,5 +915,3 @@ def compute_aux_vars_CDR(p1,
     np.save(os.path.join(OUTDIR, f"{p1}_within.{p1}.npy"), within1)
 
     return None
-
-# ----- OX40 specific funs -- end
