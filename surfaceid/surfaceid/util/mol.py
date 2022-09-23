@@ -4,7 +4,9 @@ from surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
 import torch
 
 class Mol_slim:
-    """_summary_
+    """generates a molecule object what containts attributes for
+       surface properties such as mesh edges, surface features,
+       nehgbor list, and radial distance wrt patch center 
     """
 
     def __init__(self, device, p, contacts=True, outdir=OUTDIR):
@@ -37,10 +39,11 @@ class Mol_slim:
 
 
 class Mol_with_epitopes(Mol):
-    """_summary_
-
-    :param Mol: _description_
-    :type Mol: _type_
+    """ generats a Mol object that contains attributes such as, 
+        vertex ids and radial and angular distributions wrt patch center
+        at the contact interface
+    :param Mol: protein id
+    :type Mol: str
     """
 
     def __init__(self, p, contacts=True, outdir=OUTDIR):

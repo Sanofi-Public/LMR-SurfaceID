@@ -25,7 +25,6 @@ from scipy.spatial.distance import squareform
 torch.set_num_threads(cpu_count())
 
 
-# ----- OX40 specific funs
 def get_cdr_residues(x, OUTDIR):
     cdr_residues = {}
     for chain, cdrs in zip(["L", "H"], [('CDRL1', 'CDRL2', 'CDRL3'), ('CDRH1', 'CDRH2', 'CDRH3')]):
@@ -69,7 +68,7 @@ def compute_aux_vars_CDR(p1, OUTDIR, expand_radius, neighbor_dist,
                      contact_thres1, contact_thres2, device, x2, smooth=True):
     data1 = np.load(os.path.join(OUTDIR, f"{p1}_surface.npz"))
     x1 = data1["pos"]
-    li1 = data1["list_indices"]
+    li1  = data1["list_indices"]
     rho1 = data1["rho"]
     n1 = data1["normals"]
     # ---- Create smoothed normals
@@ -96,5 +95,3 @@ def compute_aux_vars_CDR(p1, OUTDIR, expand_radius, neighbor_dist,
     np.save(os.path.join(OUTDIR, f"{p1}_within.{p1}.npy"), within1)
 
     return
-
-# ----- OX40 specific funs -- end
