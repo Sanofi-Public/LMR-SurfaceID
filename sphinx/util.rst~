@@ -1,0 +1,45 @@
+util package
+============
+
+Submodules
+----------
+
+util.Config module
+------------------
+
+.. automodule:: util.Config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+util.mol module
+---------------
+
+.. automodule:: util.mol
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+util.utils module
+-----------------
+
+.. automodule:: util.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+util.val module
+---------------
+
+.. automodule:: util.val
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: util
+   :members:
+   :undoc-members:
+   :show-inheritance:

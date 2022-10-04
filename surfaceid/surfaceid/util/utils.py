@@ -19,8 +19,8 @@ from copy import deepcopy
 from scipy.special import softmax as scipy_softmax
 from sklearn.decomposition import PCA
 
-from surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
-from surfaceid.util.mol import Mol_with_epitopes
+from surfaceid.surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
+from surfaceid.surfaceid.util.mol import Mol_with_epitopes
 
 # Globals
 torch.set_num_threads(cpu_count())
