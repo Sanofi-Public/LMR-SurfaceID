@@ -1,6 +1,6 @@
 # Surface Similarity Search via Geometric Deep Learning: SurfaceID
 
-![alt text](https://github.com/Sanofi-GitHub/LMR-SurfaceID/blob/main/data/toc.png?raw=true)
+![alt text](https://github.com/Sanofi-GitHub/LMR-SurfaceID/blob/doc_sphinx/data/toc.png)
 
 A protein can be represented in several forms, including its 1D sequence, 3D atom coordinates, and molecular surface. A protein surface contains rich structural and chemical features directly related to the protein’s function such as its ability to interact with other molecules. While many methods have been developed for comparing similarity of proteins using the sequence and structural representations, computational methods based on molecular surface representation are limited. Here, we describe “Surface ID”, a geometric deep learning system for high-throughput surface comparison based on geometric and chemical features.  Surface ID offers a novel grouping and alignment algorithm useful for clustering proteins by function, visualization, and in-silico screening of potential binding partners to a target molecule. Our method demonstrates top performance in surface similarity assessment, indicating great potential for protein functional annotation, a major need in protein engineering and therapeutic design.
 
