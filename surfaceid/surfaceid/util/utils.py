@@ -19,8 +19,9 @@ from copy import deepcopy
 from scipy.special import softmax as scipy_softmax
 from sklearn.decomposition import PCA
 
-from surfaceid.surfaceid.model.model import Model, clean_tensor, Mol, DNEG, DPOS, OUTDIR
-from surfaceid.surfaceid.util.mol import Mol_with_epitopes
+from surfaceid.surfaceid.model.model import Model, clean_tensor, Mol,DNEG, DPOS, OUTDIR
+from surfaceid.surfaceid.util.mol import Mol_with_epitopes, Mol_slim
+from surfaceid.surfaceid.model.aligner import Aligner1,get_r 
 
 # Globals
 torch.set_num_threads(cpu_count())
@@ -61,19 +62,22 @@ def gen_descriptors_contact(p1s, p2s, model, device, rho_max, outdir, fname):
     with torch.set_grad_enabled(False):
         for i, (p1, p2) in enumerate(zip(p1s, p2s)):
             # p1 -> p2
-            print(i, p1, p2)
+            #print(i, p1, p2)
             x_, rho_, theta_, mask_, idxs0_, pdbs_ = get_batch(
                 device, [(p1, p2)], rho_max, contacts=True, outdir=outdir)
             for i1 in range(0, len(x_), bs):
                 i2 = min(i1 + bs, len(x_))
-                o, _, _, _ = model(x_[i1:i2], rho_[i1:i2], theta_[
-                                   i1:i2], mask_[i1:i2], calc_loss=False)
+                o, _, _, _ = model(x_[i1:i2],
+                                   rho_[i1:i2],
+                                   theta_[i1:i2],
+                                   mask_[i1:i2],
+                                   calc_loss=False)
                 outs.append(o.detach().cpu().numpy())
             idxs.append(idxs0_)
             pdbss.append(pdbs_)
             if p1 != p2:
                 # p2 -> p1
-                print(i, p2, p1)
+                #print(i, p2, p1)
                 x_, rho_, theta_, mask_, idxs0_, pdbs_ = get_batch(
                     device, [(p2, p1)], rho_max, contacts=True, outdir=outdir)
                 for i1 in range(0, len(x_), bs):
@@ -127,10 +131,10 @@ def transform_library(x, y, z, xyz0_mean, xyz_mean, align_model, idx, n=None):
 
 def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NORMAL):
     """helper function for computing the alignment score 2.
-       this score uses the real space/raw features for the vertexes that are in contact 
-       (RLIM=1.5\AA). It computes the feature distance for contact verteces and weighs
-       it using the softmax of a Gaussian wieghed V-V distance. It also computers the 
-        dot product of the normals for the contact vertices
+this score uses the real space/raw features for the vertexes that are in contact 
+(RLIM=1.5\AA). It computes the feature distance for contact verteces and weighs
+it using the softmax of a Gaussian wieghed V-V distance. It also computers the 
+dot product of the normals for the contact vertices
 
     :param xyz0: coordinates of the query patch
     :type xyz0: np.array
@@ -155,12 +159,10 @@ def get_score2_helper(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig, sig_normal=SIG_NOR
     r = 100. * (1. - mask) + r * mask
     nactive = np.sum(mask.sum(axis=0) > 0)
     w = scipy_softmax(-r**2 / sig**2, axis=0)
-    f_matrix = np.sum(
-        np.square(fs_raw0[:, None, :] - fs_raw[None, :, :]), axis=-1)
+    f_matrix = np.sum(np.square(fs_raw0[:, None, :] - fs_raw[None, :, :]), axis=-1)
     score = (w * mask * f_matrix).sum() / nactive
     n_matrix = np.sum(n0[:, None, :] * n[None, :, :], axis=-1)
-    n_score = (w * mask * n_matrix).sum() / \
-        nactive  # normals are already smoothed
+    n_score = (w * mask * n_matrix).sum() / nactive  # normals are already smoothed
     return nactive, score, n_score
 
 
@@ -194,6 +196,13 @@ def get_score2(xyz0, fs_raw0, n0, xyz, fs_raw, n, sig):
     # n_score = np.dot(n0_pca, n_pca)
 
     return nactive, n_score, score
+
+def get_score1(xyz0, xyz, mask, npairs):
+    r = get_r(xyz0, xyz)
+    loss = np.sum(r * mask) / npairs
+
+    return loss
+
 
 
 def get_pca_normal(xyz):
@@ -380,14 +389,12 @@ def mean_normal(n):
 
 def get_desc_aux(pdbs):
     """ returns the indices where a 
-        given protein id starts and ends
-        in Surface ID descriptor file 
-    :param pdbs: pdb field in the descriptor file
-    :type pdbs: np.array
-    :return: number of patches corresponding to each 
-            protein in the area of interest,
-            unique protein ids, and the start-end indices
-            for each protein in the descriptor file
+given protein id starts and ends
+in Surface ID descriptor file 
+
+:param pdbs: pdb field in the descriptor file
+:type pdbs: np.array
+:return: number of patches corresponding to each  protein in the area of interest, unique protein ids, and the start-end indices for each protein in the descriptor file
     """
     n = len(np.unique(pdbs))
     starts = np.zeros(n, dtype=np.int32)
@@ -529,7 +536,7 @@ def search(o1,
                         frac_lb_hits = lb_nhits / lb_nexpanded
                         summary.append((target, lb, target_nhits, target_nexpanded,
                                        mean_desc_dist, lb_nhits, lb_nexpanded, frac_lb_hits, idxs, idxs_lb))
-                    print(f"{j} {lb} / dt = {time() - st:.3f}")
+                    print(f"#Hit identified  {j} {lb} :  dt = {time() - st:.3f}")
 
     return summary
 
@@ -744,9 +751,10 @@ def smooth_normals(n, rho, list_indices, sig_normal=SIG_NORMAL):
 
 def compute_aux_vars(p1, p2, OUTDIR, expand_radius, neighbor_dist, mode,
                      contact_thres1, contact_thres2, device, smooth=True):
-    #""" p1, p2 are binding partners. Compute smoothed normals,
-    #contact region indices, and a matrix that tells which points are connected
-    #"""
+    """ p1, p2 are binding partners. Compute smoothed normals, contact region indices, and a matrix that tells which points are connected
+
+    
+    """
     data1 = np.load(os.path.join(OUTDIR, f"{p1}_surface.npz"))
     x1 = data1["pos"]
     li1 = data1["list_indices"]
@@ -869,6 +877,7 @@ def compute_aux_vars_CDR(p1,
                          smooth=True):
     """ idntifies and writes the surface patches at the interace, the mean normal vectors,
         and vertex points that are within a utoff distance from each patch at the interface
+
     :paramp1: protein name
     :type p2: str
     :OUTDIR: the directory where the MaSIF surface files are saved
@@ -915,3 +924,5 @@ def compute_aux_vars_CDR(p1,
     np.save(os.path.join(OUTDIR, f"{p1}_within.{p1}.npy"), within1)
 
     return None
+
+

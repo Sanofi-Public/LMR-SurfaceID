@@ -7,6 +7,7 @@ class Mol_slim:
     """generates a molecule object what containts attributes for
        surface properties such as mesh edges, surface features,
        nehgbor list, and radial distance wrt patch center 
+
     """
 
     def __init__(self, device, p, contacts=True, outdir=OUTDIR):
@@ -42,11 +43,14 @@ class Mol_with_epitopes(Mol):
     """ generats a Mol object that contains attributes such as, 
         vertex ids and radial and angular distributions wrt patch center
         at the contact interface
+
     :param Mol: protein id
     :type Mol: str
     """
 
     def __init__(self, p, contacts=True, outdir=OUTDIR):
+
+        
         p1, p2 = p
         fname = os.path.join(outdir, p1) + "_surface.npz"
         super().__init__(fname)

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model package &mdash; LMR-SurfaceID 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="aligner package" href="aligner.html" />
+    <link rel="prev" title="util" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> LMR-SurfaceID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="util.html">util package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">util</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="util.html">util package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">model package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-surfaceid.surfaceid.model.model">model.model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.forward"><code class="docutils literal notranslate"><span class="pre">Model.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.get_dist"><code class="docutils literal notranslate"><span class="pre">Model.get_dist()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.get_dist_light"><code class="docutils literal notranslate"><span class="pre">Model.get_dist_light()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.training"><code class="docutils literal notranslate"><span class="pre">Model.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Mol"><code class="docutils literal notranslate"><span class="pre">Mol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.clean_tensor"><code class="docutils literal notranslate"><span class="pre">clean_tensor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.eval_dataset"><code class="docutils literal notranslate"><span class="pre">eval_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.gen_test_val"><code class="docutils literal notranslate"><span class="pre">gen_test_val()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.get_batch"><code class="docutils literal notranslate"><span class="pre">get_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.sample_patches"><code class="docutils literal notranslate"><span class="pre">sample_patches()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="aligner.html">aligner package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aligner.html#model-aligner-module">model.aligner module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#module-surfaceid.surfaceid.model.model">model.model module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.forward"><code class="docutils literal notranslate"><span class="pre">Model.forward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.get_dist"><code class="docutils literal notranslate"><span class="pre">Model.get_dist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.get_dist_light"><code class="docutils literal notranslate"><span class="pre">Model.get_dist_light()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Model.training"><code class="docutils literal notranslate"><span class="pre">Model.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.Mol"><code class="docutils literal notranslate"><span class="pre">Mol</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.clean_tensor"><code class="docutils literal notranslate"><span class="pre">clean_tensor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.eval_dataset"><code class="docutils literal notranslate"><span class="pre">eval_dataset()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.gen_test_val"><code class="docutils literal notranslate"><span class="pre">gen_test_val()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.get_batch"><code class="docutils literal notranslate"><span class="pre">get_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surfaceid.surfaceid.model.model.sample_patches"><code class="docutils literal notranslate"><span class="pre">sample_patches()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="aligner.html">aligner package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aligner.html#model-aligner-module">model.aligner module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LMR-SurfaceID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">util</a> &raquo;</li>
+      <li>model package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="model-package">
+<h1>model package<a class="headerlink" href="#model-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+<section id="module-surfaceid.surfaceid.model.model">
+<span id="model-model-module"></span><h1>model.model module<a class="headerlink" href="#module-surfaceid.surfaceid.model.model" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Model">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins_rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins_theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_margin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_soft_grid_across_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sep'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_center_pixel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_sig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nrotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.Model" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Model.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calc_loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#Model.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.Model.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Model.get_dist">
+<span class="sig-name descname"><span class="pre">get_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#Model.get_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.Model.get_dist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Model.get_dist_light">
+<span class="sig-name descname"><span class="pre">get_dist_light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#Model.get_dist_light"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.Model.get_dist_light" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Model.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#surfaceid.surfaceid.model.model.Model.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.Mol">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">Mol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#Mol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.Mol" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.clean_tensor">
+<span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">clean_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#clean_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.clean_tensor" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.eval_dataset">
+<span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">eval_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#eval_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.eval_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>streamlined</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.gen_test_val">
+<span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">gen_test_val</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#gen_test_val"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.gen_test_val" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.get_batch">
+<span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">get_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsample_per_mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_max</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#get_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.get_batch" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="surfaceid.surfaceid.model.model.sample_patches">
+<span class="sig-prename descclassname"><span class="pre">surfaceid.surfaceid.model.model.</span></span><span class="sig-name descname"><span class="pre">sample_patches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsample_per_mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/surfaceid/surfaceid/model/model.html#sample_patches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfaceid.surfaceid.model.model.sample_patches" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="util" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="aligner.html" class="btn btn-neutral float-right" title="aligner package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, sansrs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
