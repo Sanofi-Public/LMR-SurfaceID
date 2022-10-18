@@ -22,7 +22,8 @@ make install
 ```bash
 python3.9 -m venv sandbox
 source sandbox/bin/activate
-python main.py
+#untar the test_npz file and run:
+python main.py --params data/config.yml --library data/test.tsv
 ```
 
 ## Data
