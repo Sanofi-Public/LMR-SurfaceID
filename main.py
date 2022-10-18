@@ -235,13 +235,17 @@ if conf.ALIGN:
         logger.info(f"Aligning hits to target: {target}")
     
         if conf.CONTACT or conf.RESTRICT:
-            target_, p2 = target.split(".")
-            idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
+            if conf.TARGET:
+                target_ = target
+                idxs_contact = None
+            else:
+                target_, p2 = target.split(".")
+                idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
         
-        else:
-            target_ = target
-            idxs_contact = None
 
+        else:
+            print('library must be either restricted or in contact mode')
+            exit()
     
         if conf.SAVEPLY:
             ply_target = deepcopy(PlyData.read(
