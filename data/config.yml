@@ -1,0 +1,61 @@
+---
+# Generall varaibles
+CONTACT : True
+DESC : True
+SEARCH : True
+RESTRICT: False
+ALIGN : True
+SAVEPLY : False
+HEATMAP : False
+
+# Model Name
+MODEL:
+  NAME: final_002
+
+# Model related variables
+MODEL_PARAMETER:
+  rho_max: 6.0
+  nbins_rho: 5
+  nbins_theta: 16
+  num_in: 5
+  neg_margin: 10.
+  add_center_pixel: True
+  share_soft_grid_across_channel: True
+  conv_type: sep
+  num_filters: 512
+  weight_decay: 1.e-2
+  dropout: 0.1
+  min_sig: 5.e-2
+  lr: 5e-4
+
+SPATIAL_PARAMETER:
+  thres: 5.0
+  expand_radius : 2.0
+  neighbor_dist : 3.0
+  nmin_pts : 40
+  nmin_pts_library: 30
+  contact_thres1: 3.0
+  contact_thres2: None
+  contact_mode: dist
+  npatience: 100
+
+# Path related variables 
+PATH:
+  CATALOG_PAIRS : data/test.tsv
+  OUTDIR : data/npz
+  SAVEDIR : models
+  MODEL: final_002
+  TARGET: 4FQI_AB
+  CASE: test
+
+HIT_COLUMNS:
+  - target
+  - library epitope
+  - target_nhits
+  - target_nexpanded
+  - mean_desc_dist
+  - library_nhits
+  - library_nexpanded
+  - frac_library_hits
+  - target_expanded_indices
+  - library_epitope_indices
