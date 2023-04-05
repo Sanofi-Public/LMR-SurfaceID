@@ -74,7 +74,8 @@ python model/models.py
 
 ## Visualization
 
-A copy of masif plugin python script is available here.
+A copy of masif plugin python script is available under src/viz/. 
+upon installing MaSIF plugin, append the path to this script in the ~/.pymolpluginsrc.py  
 
 # Reference
 
