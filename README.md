@@ -66,11 +66,6 @@ git lfs pull
 GIT_TRACE=1 git lfs fetch # debug
 ```
 
-## Train
-Assume `data/20201107_SAbDab_masif` data are available. To train the model, simply run 
-```
-python model/models.py
-```
 
 ## Visualization
 
