@@ -1,11 +1,11 @@
-from surfaceid.surfaceid.util.utils import (RLIM, SIG, get_fs,
+from src.util.utils import (RLIM, SIG, get_fs,
                                   get_whole_molecule_desc, get_fs_npz, get_xyz, get_centroid,
                                   get_score1, get_score2, get_normal_npz, get_xyz_npz, transform_library,
-                                  Model, compute_aux_vars, gen_descriptors_contact, get_desc_aux,
-                                            search, compute_aux_vars_CDR,get_within)
+                                  Model, compute_aux_contact, gen_descriptors_contact, get_desc_aux,
+                                            search, compute_aux_coors,get_within,compute_aux_whole)
 
-from surfaceid.surfaceid.util.Config import Config
-from surfaceid.surfaceid.model.aligner import Aligner1
+from src.util.Config import Config
+from src.model.aligner import Aligner1
 
 import logging
 import os
@@ -76,31 +76,39 @@ if conf.SEARCH or conf.DESC or conf.ALIGN:
     model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
     model.eval()
 
-df = pd.read_csv(conf.CATALOG_PAIRS, sep="\t")
+df = pd.read_csv(conf.CATALOG_PAIRS, sep=",")
 if conf.CONTACT:
     df['Ab'] = df.apply(lambda x: f"{x['id']}_{x['Ab']}", axis=1)
     df['Ag'] = df.apply(lambda x: f"{x['id']}_{x['Ag']}", axis=1)
+    mix_region = False
+    full_surface = False
 elif conf.RESTRICT:
     df['Ab'] = df.apply(lambda x: f"{x['id']}_{x['chain']}", axis=1)
     df['Ag'] = df.apply(lambda x: f"{x['id']}_{x['chain']}", axis=1)
+    mix_region = False
+    full_surface = False
 
 else:
-    print('set either  CONTACT =Ture or RESTRICT=True in config file')
-    exit()
+    #search full surface or lookup df['region']
+    df['Ab'] = df.apply(lambda x: f"{x['id']}_{x['chain']}", axis=1)
+    df['Ag'] = df.apply(lambda x: f"{x['id']}_{x['chain']}", axis=1)
+    if 'region' in df.columns:
+        mix_region = True
     
-logger.info(f"# of pairs: {len(df)}")
+logger.info(f" # of pairs: {len(df)}")
 chains = set(df['Ab'].tolist() + df['Ag'].tolist())
-logger.info(f"# of chains: {len(chains)}")
+logger.info(f" # of chains: {len(chains)}")
 
 chains_processed = [chain for chain in chains if os.path.exists(
     f"{conf.OUTDIR}/{chain}_surface.npz")]
 
-logger.info(f"# of chains processed: {len(chains_processed)}")
+logger.info(f" # of chains processed: {len(chains_processed)}")
+
 
 df = df[df.apply(lambda x: (x['Ab'] in chains_processed) and (
     x['Ag'] in chains_processed), axis=1)].reset_index(drop=True)
 
-logger.info(f"# of pairs after filter: {len(df)}")
+logger.info(f" # of pairs after filter: {len(df)}")
 
 if os.path.exists(conf.OUTDIR_RESULTS) and conf.REMOVE_OLD:
     shutil.rmtree(conf.OUTDIR_RESULTS)
@@ -111,7 +119,7 @@ if conf.CONTACT:
         p1 = x['Ab']
         p2 = x['Ag']
         logger.info(f" Contacts for : {i}, {p1}, {p2}")
-        compute_aux_vars(p1,
+        compute_aux_contact(p1,
                          p2, 
                          conf.OUTDIR, 
                          conf.expand_radius, 
@@ -125,8 +133,8 @@ elif conf.RESTRICT:
     for i, x in df.iterrows():
         p = x['Ab']
         x = np.genfromtxt(f"{conf.OUTDIR}/{p}.xyz")
-        logger.info(f" Area of interest for : {i}, {p}")
-        compute_aux_vars_CDR(p,
+        logger.info(f" extracting area of interest for : {i}, {p}")
+        compute_aux_coors(p,
                          conf.OUTDIR, 
                          conf.expand_radius, 
                          conf.neighbor_dist,
@@ -134,6 +142,64 @@ elif conf.RESTRICT:
                          conf.contact_thres2,
                              device,x,
                          smooth=False)
+elif mix_region:
+    # c: contact,contact pairs in consequetive rows, selects upper row for search)
+    #R:read xyz
+    #F: Full
+    Cs = df[df['region']=='C']
+    Rs = df[df['region']=='R']
+    Fs = df[df['region']=='F']
+    if len(Cs) > 0 :
+        nCs = Cs.to_numpy()[:,:2]
+        nCs = nCs.reshape( (len(nCs)//2,-1)) [:,[0,1,3]]
+        Cs = pd.DataFrame(nCs,columns=['id','Ag','Ab'])
+        Cs['Ab'] = Cs.apply(lambda x: f"{x['id']}_{x['Ab']}", axis=1)
+        Cs['Ag'] = Cs.apply(lambda x: f"{x['id']}_{x['Ag']}", axis=1)
+        ex = np.concatenate([[f"{i}_{g}",f"{i}_{b}"]  for i,g,b in nCs])
+        idxs = [df.index[df['Ab']==i].item() for i in ex]
+        df = df.drop(idxs)
+        df = pd.concat([df,Cs])
+        for i, x in Cs.iterrows():
+            p1 = x['Ab']
+            p2 = x['Ag']
+            logger.info(f" Contacts for : {i}, {p1}, {p2}")
+            compute_aux_contact(p1,
+                         p2, 
+                         conf.OUTDIR, 
+                         conf.expand_radius, 
+                         conf.neighbor_dist,
+                         conf.contact_mode, 
+                         conf.contact_thres1, 
+                         conf.contact_thres2,
+                         device, 
+                         smooth=False)    
+
+    if len(Rs) > 0 :
+        for i, x in Rs.iterrows():
+            p = x['Ab']
+            x = np.genfromtxt(f"{conf.OUTDIR}/{p}.xyz")
+            logger.info(f" extracting area of interest for : {i}, {p}")
+            compute_aux_coors(p,
+                         conf.OUTDIR, 
+                         conf.expand_radius, 
+                         conf.neighbor_dist,
+                         conf.contact_thres1, 
+                         conf.contact_thres2,
+                             device,x,
+                         smooth=False)
+    if len(Fs) > 0 :
+        for i, x in Fs.iterrows():
+            p = x['Ab']
+            logger.info(f" extracting the full  surface area for : {i}, {p}")
+            compute_aux_whole(p,
+                         conf.OUTDIR,
+                         conf.neighbor_dist,
+            )        
+    
+else:
+    print(f"set CONTACT =Ture or RESTRICT=True in {args.config} or provide regions column in {conf.CATALOG_PAIRS}" )
+    exit()
+        
     
 if conf.DESC:
     p1s = df['Ab'].to_numpy()
@@ -171,21 +237,15 @@ if conf.SEARCH:
     
     summary = []
     for target in targets:
-        
-        if conf.RESTRICT and ~conf.TARGET:
-            target_, p2 = target.split(".")
-            idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
-    
-        elif conf.TARGET:
-            target_ = target #target.split(".")[0]
-            idxs_contact = None
 
+        target_,p2 = target.split(".")
+        idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
         st_target = time()
         o1, p1 = get_whole_molecule_desc(
             target_, model, conf.params.get("rho_max"), bs=128, device=device, outdir=conf.OUTDIR)
         o1 = torch.tensor(o1).to(device).view(len(o1), 1, DIM)
         if len(o1) > 20000:
-            print("skip", target)
+            logger.info(" skip", target)
             continue
         
 
@@ -198,14 +258,14 @@ if conf.SEARCH:
                         list_indices, 
                         conf.neighbor_dist)
     
-        logger.info(f"# Searching for target {target_}")
+        logger.info(f" Searching for target {target_}")
         summary.extend(search(o1, rho, list_indices, within, library, library_within, pdbs_unique, patch_sizes,
                           pdbs, x_desc, idxs_desc, mini_bs, device, conf.nmin_pts, conf.expand_radius, conf.nmin_pts_library,
-                          conf.thres, target, idxs_contact=None))
+                              conf.thres, target, idxs_contact))
         # remove o1
         o1 = o1.cpu()
         del o1
-        logger.info(f"# Search time / dt = {time() - st_target:.3f}")
+        logger.info(f" Search time / dt = {time() - st_target:.3f}")
 
     df_hits = pd.DataFrame(summary, columns=conf.HIT_COLUMNS)
     df_hits["frac_expanded"] = df_hits["target_nhits"] / df_hits["target_nexpanded"]
@@ -232,24 +292,14 @@ if conf.ALIGN:
     for target in targets:
         id_counter = 0
         st_target = time()
-        logger.info(f"Aligning hits to target: {target}")
+        logger.info(f" Aligning hits to target: {target}")
     
-        if conf.CONTACT or conf.RESTRICT:
-            if conf.TARGET:
-                target_ = target
-                idxs_contact = None
-            else:
-                target_, p2 = target.split(".")
-                idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
-        
-
-        else:
-            print('library must be either restricted or in contact mode')
-            exit()
-    
+        target_, p2 = target.split(".")
+        idxs_contact = np.load(os.path.join(conf.OUTDIR, f"{target_}_contacts.{p2}.npy"))
+                                            
         if conf.SAVEPLY:
             ply_target = deepcopy(PlyData.read(
-                os.path.join(conf.OUTDIR, f"{conf.TARGET}.ply")))
+                os.path.join(conf.OUTDIR, f"{target_}.ply")))
 
         o_target, p_target = get_whole_molecule_desc(target_, model,
                                                  conf.params.get("rho_max"),
@@ -260,7 +310,7 @@ if conf.ALIGN:
             df_ = df_hits[(df_hits["target"] == target) & (df_hits["library epitope"] == library)]
             nsample = min(10, len(df_))
             df_ = df_.sort_values("frac_geo", ascending=False).head(nsample)
-            logger.info(f"library hit: {library}")
+            logger.info(f" library hit: {library}")
             for ie, entry in df_.iterrows():
                 st = time()
                 library_p1, library_p2 = entry['library epitope'].split(".")
@@ -338,10 +388,10 @@ if conf.ALIGN:
                     else:
                         nbad += 1
                     if (nbad == conf.npatience):
-                        print(f"1 / {i} loss_min", losses.min().item(), idx1)
+                        logger.info(f" 1 / {i} loss_min {losses.min().item()} {idx1}")
                         break
                     if i == 0:
-                        print(f"1 / {i} loss_min", losses.min().item(), idx1)
+                        logger.info(f" 1 / {i} loss_min {losses.min().item()} {idx1}")
                 xyz_patch, n = transform_library(x, y, z, T_zero, xyz_mean, aligner1, idx1, n)
                 # collect stats
                 df_hits.loc[ie, f"# hits repeat"] = (mask.sum(1) > 0).sum().item()
@@ -363,7 +413,7 @@ if conf.ALIGN:
                 id_counter += 1
                 df_hits.loc[ie, "id"] = id_counter
 
-                logger.info(f"Time for {library}: {time()-st:.2f}")
+                logger.info(f" Time for aligning {library} to {target}: {time()-st:.2f}")
                 if conf.SAVEPLY:
                     fname_library = os.path.join(conf.OUTDIR, f"{library_p1}.ply")
                     if not os.path.exists(fname_library):
@@ -425,7 +475,7 @@ if conf.ALIGN:
                     io = PDBIO()
                     io.set_structure(structure)
                     io.save(fname)
-        logger.info(f"Time for {conf.TARGET}: {time()-st_target:.2f}")
+        logger.info(f" Total time for aligning hits to {target}: {time()-st_target:.2f}")
         if conf.SAVEPLY:
             out_target_fname = os.path.join(
                 conf.OUTDIR_RESULTS, f"{conf.TARGET}_ref.ply")
@@ -434,26 +484,26 @@ if conf.ALIGN:
                 conf.OUTDIR_RESULTS, f"{conf.case}_top_hits_aligned.tsv"), sep="\t", index=False)
 
         # ---- Ranking vs. scores
-        df_ = df_hits[(~df_hits["aln1_score2"].isna())]
-        for rank in ["mean_desc_dist", "frac_expanded", "frac_library_hits", "frac_geo"]:
-            plt.close()
-            fig, ax = plt.subplots(1, 1, figsize=(7, 7))
-            ax.scatter(df_[rank], df_["aln1_score2"], label="aln1")
-            ax.set_ylim(
-                [0, max(np.percentile(df_["aln1_score2"], 90) * 1.1, 1.0)])
-            ax.set_xlabel(rank)
-            ax.set_ylabel(
-                f"mean feat dist of closest vertex pairs ({RLIM}) cutoff")
-            ax.legend(loc="upper right")
-            plt.savefig(os.path.join(
-                conf.OUTDIR_RESULTS, f"{conf.case}_{rank}_vs_score2.png"), dpi=200, bbox_inches="tight")
-            plt.close()
-            ascending = True if rank == "mean_desc_dist" else False
-            df__ = df_.sort_values(
-                rank, ascending=ascending).reset_index(drop=True)[:50]
-            iselect = df__["aln1_score2"] < 0.9
-            nhit = np.sum(iselect)
-            print(rank, nhit)
+        #df_ = df_hits[(~df_hits["aln1_score2"].isna())]
+        #for rank in ["mean_desc_dist", "frac_expanded", "frac_library_hits", "frac_geo"]:
+        #    plt.close()
+        #    fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        #    ax.scatter(df_[rank], df_["aln1_score2"], label="aln1")
+        #    ax.set_ylim(
+        #        [0, max(np.percentile(df_["aln1_score2"], 90) * 1.1, 1.0)])
+        #    ax.set_xlabel(rank)
+        #    ax.set_ylabel(
+        #        f"mean feat dist of closest vertex pairs ({RLIM}) cutoff")
+        #    ax.legend(loc="upper right")
+        #    plt.savefig(os.path.join(
+        #        conf.OUTDIR_RESULTS, f"{conf.case}_{rank}_vs_score2.png"), dpi=200, bbox_inches="tight")
+        #    plt.close()
+        #    ascending = True if rank == "mean_desc_dist" else False
+        #    df__ = df_.sort_values(
+        #        rank, ascending=ascending).reset_index(drop=True)[:50]
+        #    iselect = df__["aln1_score2"] < 0.9
+        #    nhit = np.sum(iselect)
+        #    print(rank, nhit)
 
 if conf.HEATMAP:
     df_hits = pd.read_csv(os.path.join(
