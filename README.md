@@ -80,11 +80,11 @@ Reference to cite when you use Faiss in a research paper:
 @article{Rihai,
   title={Surface ID: A Geometry-aware System for Protein Molecular Surface Comparison},
   author={Saleh Riahi1&*, Jae Hyeon Lee2&#, Taylor Sorenson2, Shuai Wei1†, Sven Jager3, Reza Olfati-Saber2, Anna Park1, Maria Wendt1, Hervé Minoux4*, Yu Qiu1*},
-  journal={Nature Communications},
-  volume={7},
+  journal={Bioinformatics},
+  volume={XX},
   number={3},
   pages={535--547},
-  year={2022},
-  publisher={Nature}
+  year={2023},
+  publisher={Oxford University Press}
 }
 ```
