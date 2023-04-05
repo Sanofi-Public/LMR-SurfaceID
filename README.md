@@ -46,25 +46,6 @@ For each molecule, the modified versions of the MaSIF scripts are run to generat
 - normals [num_vertices, 3]; float
 - iface [num_vertices, 1]; float; Value eq 1 if the vertex is in contact with another molecule in the same PDB file, where contact is defined by solvent excluded region with/without other molecules.
 
-#### 20201107_SAbDab data set
-A copy of the DB pdb files are obtained by Yu Qiu and stored as `data/20201107_SAbDab`. Some catalogs generated using `gen_SAbDab_catalog.py`.
-
-#### Upload a file
-
-Large Files are stored using git lfs
-
-```bash
-brew install git-lfs # or apt, yum, pacamn, aur etc.
-git lfs track file
-git add file
-git commit -m "wip: adding train data sample"
-```
-
-#### Download a file
-```bash
-git lfs pull
-GIT_TRACE=1 git lfs fetch # debug
-```
 
 
 ## Visualization
@@ -74,7 +55,7 @@ upon installing MaSIF plugin, append the path to this script in the ~/.pymolplug
 
 # Reference
 
-Reference to cite when you use Faiss in a research paper:
+Please cite the following work:
 
 ```
 @article{Rihai,
