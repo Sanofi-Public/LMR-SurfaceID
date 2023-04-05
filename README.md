@@ -58,11 +58,8 @@ upon installing MaSIF plugin, append the path to this script in the ~/.pymolplug
 Please cite the following work:
 
 ```
-Surface ID: A Geometry-aware System for Protein Molecular Surface Comparison, 
-SRiahi, J Hyeon Lee, T Sorenson
-, S Wei1, S Jager
-, R Olfati-Saber
-, A Park
-, M Wendt
-, H Minoux, Y Qiu
+S Riahi, J Hyeon Lee, T Sorenson, S Wei1, S Jager, R Olfati-Saber, A Park, M Wendt, H Minoux, Y Qiu;
+Surface ID: A Geometry-aware System for Protein Molecular Surface Comparison;
+Bioinformatics, X,X,2023 
+
 ```
