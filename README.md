@@ -1,34 +1,24 @@
 # Surface Similarity Search via Geometric Deep Learning: SurfaceID
 
-![alt text](https://github.com/Sanofi-GitHub/LMR-SurfaceID/blob/doc_sphinx/data/toc.png)
+![alt text](https://github.com/Sanofi-GitHub/LMR-SurfaceID/blob/main/docs/toc.png)
 
 A protein can be represented in several forms, including its 1D sequence, 3D atom coordinates, and molecular surface. A protein surface contains rich structural and chemical features directly related to the protein’s function such as its ability to interact with other molecules. While many methods have been developed for comparing similarity of proteins using the sequence and structural representations, computational methods based on molecular surface representation are limited. Here, we describe “Surface ID”, a geometric deep learning system for high-throughput surface comparison based on geometric and chemical features.  Surface ID offers a novel grouping and alignment algorithm useful for clustering proteins by function, visualization, and in-silico screening of potential binding partners to a target molecule. Our method demonstrates top performance in surface similarity assessment, indicating great potential for protein functional annotation, a major need in protein engineering and therapeutic design.
 
 
-## News
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed information about latest features.
 
 ## Setup
-### Installation 
+### requirements. 
+Assuming that MaSIF and its packages are installed, or the surface npz files are provided, surface ID requirements can be installed with:
 
 ```bash
-cd surfaceID
-make install
+pip install -r requirements.txt
 ```
 
-### Test package
 
-```bash
-python3.9 -m venv sandbox
-source sandbox/bin/activate
-#untar the test_npz file and run:
-python main.py --params data/config.yml --library data/test.tsv
-```
 
 ## Data
 ### Preprocessing 
-Files can be loaded with gitlfs and will populate data directory.
 MaSIF publication's original pipeline is used (with modification) 
 for generating a surface representation per moleclue.
 
@@ -48,10 +38,11 @@ For each molecule, the modified versions of the MaSIF scripts are run to generat
 
 
 
-## Visualization
+## Visualization of the SurfaceID search outputs.
 
-A copy of masif plugin python script is available under src/viz/. 
+A copy of masif plugin python script is available under src/pymol_plugin . 
 upon installing MaSIF plugin, append the path to this script in the ~/.pymolpluginsrc.py  
+If the SurfaceID search is conducted and the "ALIGNED & SAVEPLY" are set to "TRUE" in the config.yml file, the hit surface area on target and candidate protesins can be illustrated by "sidloadply <candidate.target.ply>" for candidate hit and "sidloadply <target_ref.ply>" for the patches on target.
 
 # Reference
 
