@@ -14,6 +14,7 @@ Assuming that MaSIF and its packages are installed, or the surface npz files are
 ```bash
 pip install -r requirements.txt
 ```
+plyfile package needs to be installed for reading/writing the surface mesh.  
 
 
 
