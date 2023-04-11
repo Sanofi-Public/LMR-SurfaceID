@@ -3,7 +3,6 @@ Bio==1.5.9
 matplotlib==3.6.2
 numpy==1.23.5
 pandas==1.5.2
-plyfile==0.8.1
 pymol==0.1.0
 PyYAML==6.0
 scikit_learn==1.2.2
