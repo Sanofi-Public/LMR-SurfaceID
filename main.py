@@ -45,22 +45,22 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument(
     "--device", default="cpu", help="Device to compute",dest='device'
 )
-argparser.add_argument(
-    "--params", default="config/config.yml", help="config file with model parameter"
-)
-argparser.add_argument(
-    "--library_csv", help="search library",dest='lib_csv', default=None
-)
+#argparser.add_argument(
+#    "--params", default="config/config.yml", help="config file with model parameter"
+#)
+#argparser.add_argument(
+#    "--library_csv", help="search library",dest='lib_csv', default=None
+#)
 # parse the arguments
 (args) = argparser.parse_args()
-if args.lib_csv: print(args.lib_csv)
-config = yaml.safe_load(open(args.params, "r"))
-logger.info(f"Parsing config file {args.params}")
+#if args.lib_csv: print(args.lib_csv)
+config = yaml.safe_load(open('inputs/config.yml', "r"))
+logger.info(f"Parsing config file inputs/config.yml")
 device = args.device
-conf=Config(args.params)
+conf= Config('inputs/config.yml') #Config(args.params)
 
-if args.lib_csv:
-    conf.CATALOG_PAIRS = args.lib_csv
+#if args.lib_csv:
+conf.CATALOG_PAIRS = "inputs/input.csv" #args.lib_csv
     
 if device == 'cpu':
     torch.set_num_threads(cpu_count())
@@ -197,7 +197,7 @@ elif mix_region:
             )        
     
 else:
-    print(f"set CONTACT =Ture or RESTRICT=True in {args.config} or provide regions column in {conf.CATALOG_PAIRS}" )
+    print(f"set CONTACT =Ture or RESTRICT=True in config or provide regions column in {conf.CATALOG_PAIRS}" )
     exit()
         
     
