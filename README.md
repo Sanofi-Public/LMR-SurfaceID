@@ -63,5 +63,5 @@ Please cite the following work:
 ```
 S Riahi, J Hyeon Lee, T Sorenson, S Wei1, S Jager, R Olfati-Saber, A Park, M Wendt, H Minoux, Y Qiu;
 Surface ID: A Geometry-aware System for Protein Molecular Surface Comparison;
-_Bioinformatics_, Volume 39, Issue 42023,btad196 , 2023  
+Bioinformatics, Volume 39, Issue 42023,btad196 , 2023  
 ```
