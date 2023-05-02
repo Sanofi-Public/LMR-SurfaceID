@@ -37,7 +37,18 @@ For each molecule, the modified versions of the MaSIF scripts are run to generat
 - normals [num_vertices, 3]; float
 - iface [num_vertices, 1]; float; Value eq 1 if the vertex is in contact with another molecule in the same PDB file, where contact is defined by solvent excluded region with/without other molecules.
 
+## Running SurfaceID
+Following the MaSIF preprocessing and generation npz/*.npz, provide the library(inputs/inputs.csv) and config parameters under input/config.yml . 
 
+```bash
+python main.py
+```
+
+Important config parameters:
+* Target : target protein (if empty, an all-against-all search will be conducted)
+* CONTACT : whether the PPI interface of the complex system sould be used for search
+* RESTRICT: if contact interface is not specified , this keyword tells SurfaceID to read the XYZ coordinates of the area of interest for each library. The entire protein surface can be searched when when as region column exists in the inputs/input.csv where keywords F,C,R stands for entire protein surface, PPI area, or , restricted (with XYZ coordinates), respectively.   
+* SPATIAL_PARAMETERS: are various distance and size parameters used to define the search area or size of the hit region 
 
 ## Visualization of the SurfaceID search outputs.
 
