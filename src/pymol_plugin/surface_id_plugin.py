@@ -918,8 +918,8 @@ def load_ply_hit(filename, patch_name, color="white", name='ply', dotSize=0.2, l
     
     return 
 
-cmd.extend('loadply', load_ply)
-cmd.extend('loaddots', load_dots)
-cmd.extend('loadgiface', load_giface)
-cmd.extend('loadplyref', load_ply_ref)
+cmd.extend('sidloadply', load_ply)
+cmd.extend('sidloaddots', load_dots)
+cmd.extend('sidloadgiface', load_giface)
+cmd.extend('sidloadplyref', load_ply_ref)
 
