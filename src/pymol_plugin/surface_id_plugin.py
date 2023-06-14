@@ -701,18 +701,19 @@ def load_ply_ref(filename, hits, color="white", name='ply', dotSize=0.2, lineSiz
         elif hits == "all":
             num_hits = len(mesh.patch_indices)
             hits_idx = range(1, num_hits+1)
-    else:
-        try:
-            hits=int(hits)
-            hits_idx = range(1, hits+1)
-            num_hits = hits
-        except TypeError:
-            print("Please provide hits \n which could be: \n \
-                                 all for all hits (e.g. all)\n \
-                                 a integer number for top n hits (e.g. 3) \n \
-                                 a list of hits id number (e.g. [1, 3, 5]) \n \
-                                 a two elements tuple for first and last id number (e.g. (3,5))")
-    
+        else:
+            try:
+                hits=int(hits)
+                hits_idx = range(1, hits+1)
+                num_hits = hits
+            except :
+                print("""Provide hit regions for visualization using one of the following: 
+ all for all hits (e.g. all)
+ an integer number for top n hits (e.g. 3) 
+ alist of hits id number (e.g. [1, 3, 5]) 
+ a two elements tuple for first and last id number (e.g. (3,5))""")
+                cmd.quit()
+  
     print("attributes: ", mesh.get_attribute_names())
 
     ignore_normal = False 
