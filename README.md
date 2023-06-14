@@ -59,7 +59,6 @@ If the SurfaceID search is conducted and the "ALIGNED & SAVEPLY" are set to "TRU
 # aligned candidate hit
 sidloadply <candidate.target.ply>
 
-
 # target surface area corresponding to each candidate hits identified by:
 # <all> for all candidate hits 
 #[1,2,3] for candidate hitst 1, 2, 3
