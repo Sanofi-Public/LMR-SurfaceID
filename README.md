@@ -54,7 +54,7 @@ Important config parameters:
 
 A copy of the modified MaSIF plugin where the surfaces for target/candidate hits can be visualized is available under src/pymol_plugin. 
 upon installing this plugin, sidloadply and sidloadply_ref are added to the CMD list. If not, you may need to append the path to this script to ~/.pymolpluginsrc.py (pymol.plugins.set_startup_path).  
-If the SurfaceID search is conducted and the "ALIGNED & SAVEPLY" are set to "TRUE" in the config.yml file, the hit surface area on target and candidate protesins can be visualized with:
+If the SurfaceID search is conducted and the "ALIGNED & SAVEPLY" are set to "TRUE" in the config.yml file, the hit surface area on target and candidate protesins can be visualized with these commands in the pymol terminal:
 ``` python
 # aligned candidate hit
 sidloadply <candidate.target.ply>
