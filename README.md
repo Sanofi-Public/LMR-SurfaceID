@@ -23,19 +23,7 @@ plyfile package needs to be installed for reading/writing the surface mesh.
 MaSIF publication's original pipeline is used (with modification) 
 for generating a surface representation per moleclue.
 
-For each molecule, the modified versions of the MaSIF scripts are run to generate surface representation files. These files are "collated" into a file `{pdb}_{chain}_suface.npz` that contains the triangular mesh and properties at each vertex and the `{pdb}_{chain}.ply/pdb` files for surface and PDB files. Each `*_surface.npz` file contains the following entries: 
-
-- pos [num_vertices, 3]; float
-- edge_index [2, num_edges]; int
-- x_{embedding_name} [num_vertices, d_embedding]; float;
-- rho [num_vertices, max_num_vertices_per_patch]; float; padded zero
-- theta [num_vertices, max_num_vertices_per_patch]; float; padded zero
-- x_local [num_vertices, max_num_vertices_per_patch, d_embedding_local]; float; padded zero; hand-engineered 5 numbers
-- mask [num_vertices, max_num_vertices_per_patch]; bool; padding mask
-- list_indices [num_vertices, max_num_vertices_per_patch]; int; padded -1 for masked
-- face [3, num_faces]; int
-- normals [num_vertices, 3]; float
-- iface [num_vertices, 1]; float; Value eq 1 if the vertex is in contact with another molecule in the same PDB file, where contact is defined by solvent excluded region with/without other molecules.
+For each molecule, use src/masif2npz.py to generate surface representation files. These files are "collated" into a  `{id}_{chain}_suface.npz` that contains the features that SurfaceID requires. 
 
 ## Running SurfaceID
 Following the MaSIF preprocessing and generation npz/*.npz, provide the library(inputs/inputs.csv) and config parameters under input/config.yml . 
