@@ -9,3 +9,4 @@ scipy==1.10.1
 seaborn==0.12.2
 torch==2.0.0
 torch_scatter==2.1.1+pt20cpu
+plyfile
