@@ -478,7 +478,7 @@ if conf.ALIGN:
         logger.info(f" Total time for aligning hits to {target}: {time()-st_target:.2f}")
         if conf.SAVEPLY:
             out_target_fname = os.path.join(
-                conf.OUTDIR_RESULTS, f"{conf.TARGET}_ref.ply")
+                conf.OUTDIR_RESULTS, f"{target}_ref.ply")
             ply_target.write(out_target_fname)
         df_hits.to_csv(os.path.join(
                 conf.OUTDIR_RESULTS, f"{conf.case}_top_hits_aligned.tsv"), sep="\t", index=False)
