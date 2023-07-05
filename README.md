@@ -39,7 +39,7 @@ Important config parameters:
 * SPATIAL_PARAMETERS: are various distance and size parameters used to define the search area or size of the hit region 
 
 ## Visualization of the SurfaceID search outputs.
-
+Following the installation of the Pymol plugin from MaSIF, SurfaceID plugiin can be installed to visualize the search/align results 
 A copy of the modified MaSIF plugin where the surfaces for target/candidate hits can be visualized is available under src/pymol_plugin. 
 upon installing this plugin, sidloadply and sidloadply_ref are added to the CMD list. If not, you may need to append the path to this script to ~/.pymolpluginsrc.py (pymol.plugins.set_startup_path).  
 If the SurfaceID search is conducted and the "ALIGNED & SAVEPLY" are set to "TRUE" in the config.yml file, the hit surface area on target and candidate protesins can be visualized with these commands in the pymol terminal:
